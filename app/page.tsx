@@ -121,16 +121,6 @@ function Sidebar() {
   );
 }
 
-function RightPanel() {
-  return (
-    <aside className="w-full md:w-[320px] md:shrink-0 flex flex-col gap-3 overflow-y-auto">
-      <div data-tour="signal-log"><SignalLog /></div>
-      <div data-tour="custom-signals"><CustomSignalBuilder /></div>
-      <div data-tour="fundamentals"><FundamentalsPanel /></div>
-      <NewsPanel />
-    </aside>
-  );
-}
 
 function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const tr = useT();
@@ -183,7 +173,7 @@ export default function Home() {
   const locale = useStore((s) => s.locale);
 
   return (
-    <div className="flex flex-col h-full bg-navy">
+    <div className="flex flex-col h-screen overflow-hidden bg-navy">
       {/* Mobile top bar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle bg-panel md:hidden">
         <div className="flex items-center gap-2">
@@ -220,7 +210,7 @@ export default function Home() {
       </div>
 
       {/* Main layout */}
-      <div className="flex-1 flex flex-col md:flex-row gap-0 md:gap-3 p-0 md:p-3 min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row md:items-stretch gap-0 md:gap-3 p-0 md:p-3 min-h-0 overflow-hidden">
         <div className="hidden md:flex">
           <Sidebar />
         </div>
@@ -240,8 +230,14 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="md:flex flex-col">
-          <RightPanel />
+        <div
+          className="hidden md:flex flex-col gap-3 w-[320px] shrink-0 overflow-y-auto pb-2"
+          style={{ maxHeight: 'calc(100dvh - 72px)' }}
+        >
+          <div data-tour="signal-log"><SignalLog /></div>
+          <div data-tour="custom-signals"><CustomSignalBuilder /></div>
+          <div data-tour="fundamentals"><FundamentalsPanel /></div>
+          <NewsPanel />
         </div>
       </div>
 

@@ -166,18 +166,18 @@ export default function FundamentalsPanel() {
   return (
     <>
       <div className="bg-panel border border-border-subtle rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-          <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle gap-2">
+          <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase truncate">
             {tr('fundamentalsTitle')}
           </h2>
           {data && (
             <button
               onClick={() => setModalOpen(true)}
-              className="flex items-center gap-1 text-xs font-sans text-text-muted hover:text-accent transition-colors"
+              className="flex items-center gap-1 text-xs font-sans text-accent hover:opacity-70 transition-opacity shrink-0 whitespace-nowrap"
               aria-label={tr('expandDetails')}
-              title={tr('expandDetails')}
             >
               <ExpandIcon />
+              {tr('expandDetails')}
             </button>
           )}
         </div>
@@ -230,7 +230,7 @@ export default function FundamentalsPanel() {
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs text-text-muted font-sans leading-relaxed line-clamp-4">
+                    <p className="text-xs text-text-muted font-sans leading-relaxed line-clamp-3">
                       {translatedDesc}
                     </p>
                     {locale === 'ro' && translatedDesc && translatedDesc !== data.description && (

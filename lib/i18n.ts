@@ -55,7 +55,7 @@ export const t: Record<string, Record<Locale, string>> = {
   basedOn: { ro: 'Bazat pe', en: 'Based on' },
   analystOpinion: { ro: 'opinie de analist', en: 'analyst opinion' },
   analystOpinions: { ro: 'opinii de analist', en: 'analyst opinions' },
-  expandDetails: { ro: 'Vezi detalii complete', en: 'View full details' },
+  expandDetails: { ro: 'Detalii', en: 'Details' },
   descriptionTranslated: { ro: '(tradus automat)', en: '' },
   translating: { ro: 'Se traduce…', en: '' },
   // NewsPanel

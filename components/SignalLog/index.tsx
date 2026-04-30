@@ -44,7 +44,7 @@ export default function SignalLog() {
         )}
       </div>
 
-      <div className="max-h-64 overflow-y-auto">
+      <div>
         {!selectedSymbol && (
           <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
             {tr('selectStockSignals')}

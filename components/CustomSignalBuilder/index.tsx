@@ -65,6 +65,8 @@ function emptyCondition(): CustomCondition {
 
 // ─── ConditionRow ───────────────────────────────────────────────────────────
 
+const SELECT_CLS = 'w-full bg-navy border border-border-subtle rounded px-2 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-accent';
+
 function ConditionRow({
   condition,
   index,
@@ -79,86 +81,93 @@ function ConditionRow({
   canRemove: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 py-2">
+    <div className="py-2 space-y-2">
+      {/* AND label */}
       {index > 0 && (
-        <span className="text-xs font-mono text-accent shrink-0">ȘI</span>
+        <span className="inline-block text-[10px] font-mono font-bold text-accent bg-accent/10 px-2 py-0.5 rounded">ȘI</span>
       )}
 
-      {/* LHS */}
-      <select
-        value={condition.lhs}
-        onChange={(e) => onChange({ ...condition, lhs: e.target.value as CustomIndicatorSource })}
-        className="bg-navy border border-border-subtle rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-accent"
-      >
-        {ALL_SOURCES.map((s) => (
-          <option key={s} value={s}>{INDICATOR_LABELS[s]}</option>
-        ))}
-      </select>
-
-      {/* Operator */}
-      <select
-        value={condition.operator}
-        onChange={(e) => onChange({ ...condition, operator: e.target.value as CustomConditionOperator })}
-        className="bg-navy border border-border-subtle rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-accent"
-      >
-        {(Object.keys(OPERATOR_LABELS) as CustomConditionOperator[]).map((op) => (
-          <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
-        ))}
-      </select>
-
-      {/* RHS type toggle */}
-      <div className="flex rounded border border-border-subtle overflow-hidden shrink-0">
-        {(['VALUE', 'INDICATOR'] as CustomRhsType[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => onChange({
-              ...condition,
-              rhsType: t,
-              rhsValue: t === 'VALUE' ? 30 : undefined,
-              rhsIndicator: t === 'INDICATOR' ? 'MACD_SIGNAL' : undefined,
-            })}
-            className={`px-2 py-1 text-xs font-mono transition-colors ${
-              condition.rhsType === t
-                ? 'bg-accent text-white'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
-          >
-            {t === 'VALUE' ? 'Valoare' : 'Indicator'}
-          </button>
-        ))}
-      </div>
-
-      {/* RHS input */}
-      {condition.rhsType === 'VALUE' ? (
-        <input
-          type="number"
-          value={condition.rhsValue ?? ''}
-          onChange={(e) => onChange({ ...condition, rhsValue: parseFloat(e.target.value) || 0 })}
-          className="w-20 bg-navy border border-border-subtle rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-accent"
-        />
-      ) : (
+      {/* Row 1: LHS + operator */}
+      <div className="grid grid-cols-2 gap-2">
         <select
-          value={condition.rhsIndicator ?? 'MACD_SIGNAL'}
-          onChange={(e) => onChange({ ...condition, rhsIndicator: e.target.value as CustomIndicatorSource })}
-          className="bg-navy border border-border-subtle rounded px-2 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-accent"
+          value={condition.lhs}
+          onChange={(e) => onChange({ ...condition, lhs: e.target.value as CustomIndicatorSource })}
+          className={SELECT_CLS}
         >
           {ALL_SOURCES.map((s) => (
             <option key={s} value={s}>{INDICATOR_LABELS[s]}</option>
           ))}
         </select>
-      )}
 
-      {canRemove && (
-        <button
-          onClick={onRemove}
-          className="ml-auto text-text-dim hover:text-loss transition-colors"
-          title="Șterge condiție"
+        <select
+          value={condition.operator}
+          onChange={(e) => onChange({ ...condition, operator: e.target.value as CustomConditionOperator })}
+          className={SELECT_CLS}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-        </button>
-      )}
+          {(Object.keys(OPERATOR_LABELS) as CustomConditionOperator[]).map((op) => (
+            <option key={op} value={op}>{OPERATOR_LABELS[op]}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Row 2: RHS type toggle + value/indicator + remove */}
+      <div className="flex items-center gap-2">
+        {/* RHS type toggle */}
+        <div className="flex rounded border border-border-subtle overflow-hidden shrink-0">
+          {(['VALUE', 'INDICATOR'] as CustomRhsType[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => onChange({
+                ...condition,
+                rhsType: t,
+                rhsValue: t === 'VALUE' ? 30 : undefined,
+                rhsIndicator: t === 'INDICATOR' ? 'MACD_SIGNAL' : undefined,
+              })}
+              className={`px-2 py-1 text-[11px] font-mono transition-colors ${
+                condition.rhsType === t
+                  ? 'bg-accent text-white'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {t === 'VALUE' ? 'Val.' : 'Ind.'}
+            </button>
+          ))}
+        </div>
+
+        {/* RHS value or indicator */}
+        <div className="flex-1 min-w-0">
+          {condition.rhsType === 'VALUE' ? (
+            <input
+              type="number"
+              value={condition.rhsValue ?? ''}
+              onChange={(e) => onChange({ ...condition, rhsValue: parseFloat(e.target.value) || 0 })}
+              className="w-full bg-navy border border-border-subtle rounded px-2 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-accent"
+            />
+          ) : (
+            <select
+              value={condition.rhsIndicator ?? 'MACD_SIGNAL'}
+              onChange={(e) => onChange({ ...condition, rhsIndicator: e.target.value as CustomIndicatorSource })}
+              className={SELECT_CLS}
+            >
+              {ALL_SOURCES.map((s) => (
+                <option key={s} value={s}>{INDICATOR_LABELS[s]}</option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {canRemove && (
+          <button
+            onClick={onRemove}
+            className="shrink-0 p-1 text-text-dim hover:text-loss transition-colors rounded"
+            title="Șterge condiție"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -208,31 +217,31 @@ function RuleForm({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Name + type */}
-      <div className="flex gap-3">
-        <input
-          type="text"
-          placeholder="Numele semnalului…"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="flex-1 bg-navy border border-border-subtle rounded px-3 py-1.5 text-sm font-sans text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent"
-        />
-        <div className="flex rounded border border-border-subtle overflow-hidden shrink-0">
-          {(Object.keys(OUTPUT_LABELS) as CustomSignalOutputType[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setOutputType(t)}
-              className={`px-3 py-1.5 text-xs font-mono transition-colors ${
-                outputType === t
-                  ? `bg-panel-hover ${OUTPUT_COLORS[t]} font-semibold`
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-            >
-              {OUTPUT_LABELS[t]}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-3">
+      {/* Name */}
+      <input
+        type="text"
+        placeholder="Numele semnalului…"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="w-full bg-navy border border-border-subtle rounded px-3 py-1.5 text-sm font-sans text-text-primary placeholder:text-text-dim focus:outline-none focus:border-accent"
+      />
+
+      {/* Type selector — full width, three equal buttons */}
+      <div className="flex rounded border border-border-subtle overflow-hidden">
+        {(Object.keys(OUTPUT_LABELS) as CustomSignalOutputType[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setOutputType(t)}
+            className={`flex-1 py-1.5 text-xs font-mono transition-colors ${
+              outputType === t
+                ? `bg-panel-hover ${OUTPUT_COLORS[t]} font-semibold`
+                : 'text-text-muted hover:text-text-primary'
+            }`}
+          >
+            {OUTPUT_LABELS[t]}
+          </button>
+        ))}
       </div>
 
       {/* Conditions */}
