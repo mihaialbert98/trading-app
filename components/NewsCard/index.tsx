@@ -1,20 +1,20 @@
+'use client';
+
+import { useT } from '@/lib/i18n';
 import type { NewsItem } from '@/types/stock';
 
-const SENTIMENT_CONFIG = {
+const SENTIMENT_STYLE = {
   POSITIVE: {
-    label: 'POZITIV',
     bg: 'bg-gain/10',
     text: 'text-gain',
     border: 'border-gain/30',
   },
   NEGATIVE: {
-    label: 'NEGATIV',
     bg: 'bg-loss/10',
     text: 'text-loss',
     border: 'border-loss/30',
   },
   NEUTRAL: {
-    label: 'NEUTRU',
     bg: 'bg-border-subtle',
     text: 'text-text-muted',
     border: 'border-border-subtle',
@@ -34,7 +34,15 @@ interface NewsCardProps {
 }
 
 export default function NewsCard({ item }: NewsCardProps) {
-  const sentiment = SENTIMENT_CONFIG[item.sentiment];
+  const tr = useT();
+  const style = SENTIMENT_STYLE[item.sentiment];
+
+  const sentimentLabel =
+    item.sentiment === 'POSITIVE'
+      ? tr('positive')
+      : item.sentiment === 'NEGATIVE'
+      ? tr('negative')
+      : tr('neutral');
 
   return (
     <a
@@ -71,10 +79,10 @@ export default function NewsCard({ item }: NewsCardProps) {
             className={`
               ml-auto text-[10px] font-mono font-semibold px-1.5 py-0.5
               rounded border tracking-wide
-              ${sentiment.bg} ${sentiment.text} ${sentiment.border}
+              ${style.bg} ${style.text} ${style.border}
             `}
           >
-            {sentiment.label}
+            {sentimentLabel}
           </span>
         </div>
       </div>

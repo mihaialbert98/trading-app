@@ -10,7 +10,9 @@ import IndicatorPanel from '@/components/IndicatorPanel';
 import SignalLog from '@/components/SignalLog';
 import FundamentalsPanel from '@/components/FundamentalsPanel';
 import NewsPanel from '@/components/NewsPanel';
+import Link from 'next/link';
 import { useStore } from '@/store';
+import { useT } from '@/lib/i18n';
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useStore();
@@ -44,8 +46,22 @@ function ThemeToggle() {
   );
 }
 
+function LanguageToggle() {
+  const { locale, setLocale } = useStore();
+  return (
+    <button
+      onClick={() => setLocale(locale === 'ro' ? 'en' : 'ro')}
+      className="px-2 py-1 rounded text-xs font-mono font-semibold border border-border-subtle text-text-muted hover:border-accent hover:text-accent transition-colors"
+      aria-label="Schimbă limba / Change language"
+    >
+      {locale === 'ro' ? 'EN' : 'RO'}
+    </button>
+  );
+}
+
 function Sidebar() {
   const { selectedSymbol, selectedName, addToWatchlist, watchlist } = useStore();
+  const tr = useT();
   const isWatched = selectedSymbol
     ? watchlist.some((w) => w.symbol === selectedSymbol)
     : false;
@@ -69,7 +85,10 @@ function Sidebar() {
             StockScope
           </span>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
       </div>
 
       <SearchBar />
@@ -91,7 +110,7 @@ function Sidebar() {
               strokeLinecap="round"
             />
           </svg>
-          Adaugă la Liste
+          {tr('addToList')}
         </button>
       )}
 
@@ -111,6 +130,7 @@ function RightPanel() {
 }
 
 function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const tr = useT();
   return (
     <>
       {isOpen && (
@@ -135,12 +155,14 @@ function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
         </div>
         <div className="px-4 pb-6 flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <span className="font-sans font-semibold text-text-primary text-sm">Caută</span>
+            <span className="font-sans font-semibold text-text-primary text-sm">
+              {tr('searchMobile')}
+            </span>
             <button
               className="text-text-muted text-xs font-sans hover:text-text-primary"
               onClick={onClose}
             >
-              Închide
+              {tr('close')}
             </button>
           </div>
           <SearchBar />
@@ -153,6 +175,7 @@ function MobileDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => voi
 
 export default function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const tr = useT();
 
   return (
     <div className="flex flex-col h-full bg-navy">
@@ -172,20 +195,23 @@ export default function Home() {
           </div>
           <span className="font-sans font-bold text-text-primary text-sm">StockScope</span>
         </div>
-        <button
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border-subtle text-text-muted text-xs font-sans hover:border-accent hover:text-accent transition-colors"
-          onClick={() => setDrawerOpen(true)}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-            <path
-              d="M2 4h10M2 7h10M2 10h10"
-              stroke="currentColor"
-              strokeWidth="1.3"
-              strokeLinecap="round"
-            />
-          </svg>
-          Caută
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border-subtle text-text-muted text-xs font-sans hover:border-accent hover:text-accent transition-colors"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+              <path
+                d="M2 4h10M2 7h10M2 10h10"
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinecap="round"
+              />
+            </svg>
+            {tr('searchMobile')}
+          </button>
+        </div>
       </div>
 
       {/* Main layout */}
@@ -216,7 +242,11 @@ export default function Home() {
 
       <footer className="px-4 py-2 border-t border-border-subtle text-center bg-panel">
         <p className="text-[11px] font-sans text-text-dim">
-          Doar în scop informativ. Nu constituie consiliere financiară. Datele de piață au o întârziere de 15 minute.
+          {tr('disclaimer')}
+          {' · '}
+          <Link href="/help" className="text-accent hover:underline">
+            {tr('helpLink')}
+          </Link>
         </p>
       </footer>
 

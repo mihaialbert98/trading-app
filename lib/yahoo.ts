@@ -121,6 +121,7 @@ export async function searchTickers(query: string): Promise<SearchResult[]> {
       exchange: q.exchange ?? '',
       country: '', // Yahoo Finance search doesn't reliably return country
       type,
+      logoUrl: null, // derived from symbol in the frontend using Clearbit
     } satisfies SearchResult;
   });
 
@@ -215,6 +216,7 @@ export async function getFundamentals(symbol: string): Promise<CompanyInfo> {
     industry: profile?.industry ?? '',
     country: profile?.country ?? '',
     description,
+    website: profile?.website ?? null,
     peRatio: detail?.trailingPE ?? keyStats?.forwardPE ?? null,
     eps: keyStats?.trailingEps ?? null,
     marketCap: detail?.marketCap ?? null,

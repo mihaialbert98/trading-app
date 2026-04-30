@@ -1,6 +1,7 @@
 'use client';
 
 import { useStore } from '@/store';
+import { useT } from '@/lib/i18n';
 import { useQuote } from '@/hooks/useStockData';
 
 interface WatchlistRowProps {
@@ -89,12 +90,13 @@ function WatchlistRow({ symbol, name, isSelected, onSelect, onRemove }: Watchlis
 
 export default function Watchlist() {
   const { watchlist, selectedSymbol, setSelectedSymbol, removeFromWatchlist } = useStore();
+  const tr = useT();
 
   return (
     <div className="bg-panel border border-border-subtle rounded-lg overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
         <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase">
-          Watchlist
+          {tr('watchlistTitle')}
         </h2>
         {watchlist.length > 0 && (
           <span className="text-xs font-mono text-text-muted">{watchlist.length}</span>
@@ -104,7 +106,7 @@ export default function Watchlist() {
       {watchlist.length === 0 ? (
         <div className="px-4 py-5 text-center">
           <p className="text-text-muted text-xs font-sans leading-relaxed">
-            Caută o acțiune și adaug-o la lista de urmărire
+            {tr('watchlistEmpty')}
           </p>
         </div>
       ) : (

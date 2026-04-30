@@ -1,6 +1,7 @@
 'use client';
 
 import { useStore } from '@/store';
+import { useT } from '@/lib/i18n';
 import type { IndicatorType } from '@/types/indicators';
 
 const INDICATORS: { key: IndicatorType; label: string }[] = [
@@ -16,10 +17,11 @@ const INDICATORS: { key: IndicatorType; label: string }[] = [
 
 export default function IndicatorToggle() {
   const { activeIndicators, toggleIndicator } = useStore();
+  const tr = useT();
 
   return (
     <div className="flex items-center gap-1 flex-wrap">
-      <span className="text-text-dim text-xs font-sans mr-1">Indicatori:</span>
+      <span className="text-text-dim text-xs font-sans mr-1">{tr('indicatorsLabel')}</span>
       {INDICATORS.map(({ key, label }) => {
         const active = activeIndicators.includes(key);
         return (

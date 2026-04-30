@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { useStore } from '@/store';
+import { useT } from '@/lib/i18n';
 import NewsCard from '@/components/NewsCard';
 import type { NewsItem } from '@/types/stock';
 
@@ -30,6 +31,7 @@ function SkeletonNews() {
 
 export default function NewsPanel() {
   const selectedSymbol = useStore((s) => s.selectedSymbol);
+  const tr = useT();
 
   const { data, isLoading, error } = useSWR<NewsItem[]>(
     selectedSymbol ? `/api/news?symbol=${encodeURIComponent(selectedSymbol)}` : null,
@@ -41,16 +43,18 @@ export default function NewsPanel() {
     <div className="bg-panel border border-border-subtle rounded-lg overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
         <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase">
-          News
+          {tr('newsTitle')}
         </h2>
         {data && data.length > 0 && (
-          <span className="text-xs font-mono text-text-muted">{data.length} articole</span>
+          <span className="text-xs font-mono text-text-muted">
+            {data.length} {tr('newsUnit')}
+          </span>
         )}
       </div>
 
       {!selectedSymbol && (
         <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
-          Selectează o acțiune pentru știri
+          {tr('selectStockNews')}
         </div>
       )}
 
@@ -58,13 +62,13 @@ export default function NewsPanel() {
 
       {selectedSymbol && error && (
         <div className="px-4 py-4 text-center text-loss text-sm font-sans">
-          Eroare la încărcarea știrilor
+          {tr('newsError')}
         </div>
       )}
 
       {data && !isLoading && data.length === 0 && (
         <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
-          Nu există știri recente
+          {tr('noNews')}
         </div>
       )}
 

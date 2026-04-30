@@ -22,6 +22,7 @@ interface StoreState {
   timeframe: Timeframe;
   interval: Interval;
   theme: 'dark' | 'light';
+  locale: 'ro' | 'en';
   // actions
   setSelectedSymbol: (symbol: string, name: string) => void;
   addToWatchlist: (symbol: string, name: string) => void;
@@ -29,6 +30,7 @@ interface StoreState {
   toggleIndicator: (indicator: IndicatorType) => void;
   setTimeframe: (tf: Timeframe, interval: Interval) => void;
   toggleTheme: () => void;
+  setLocale: (locale: 'ro' | 'en') => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -43,6 +45,7 @@ export const useStore = create<StoreState>()(
       timeframe: '3mo',
       interval: '1d',
       theme: 'dark',
+      locale: 'ro',
 
       setSelectedSymbol: (symbol: string, name: string) =>
         set({ selectedSymbol: symbol, selectedName: name }),
@@ -72,6 +75,8 @@ export const useStore = create<StoreState>()(
 
       toggleTheme: () =>
         set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
+
+      setLocale: (locale: 'ro' | 'en') => set({ locale }),
     }),
     {
       name: 'stockscope-store',
@@ -79,6 +84,7 @@ export const useStore = create<StoreState>()(
       partialize: (state) => ({
         watchlist: state.watchlist,
         theme: state.theme,
+        locale: state.locale,
         activeIndicators: state.activeIndicators,
         emaPeriods: state.emaPeriods,
         smaPeriods: state.smaPeriods,

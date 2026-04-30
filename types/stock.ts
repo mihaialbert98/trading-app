@@ -25,6 +25,7 @@ export interface CompanyInfo {
   industry: string;
   country: string;
   description: string;
+  website: string | null;
   peRatio: number | null;
   eps: number | null;
   marketCap: number | null;
@@ -50,4 +51,5 @@ export interface SearchResult {
   exchange: string;
   country: string;
   type: string;
+  logoUrl: string | null;
 }
