@@ -26,6 +26,8 @@ function formatTime(ts: number): string {
 export default function SignalLog() {
   const selectedSymbol = useStore((s) => s.selectedSymbol);
   const locale = useStore((s) => s.locale);
+  const selectedSignalTimestamp = useStore((s) => s.selectedSignalTimestamp);
+  const setSelectedSignalTimestamp = useStore((s) => s.setSelectedSignalTimestamp);
   const { signals, isLoading, error } = useSignals(selectedSymbol);
   const tr = useT();
 
@@ -72,13 +74,17 @@ export default function SignalLog() {
         {signals.map((signal, idx) => {
           const description =
             signalDescriptions[signal.rule]?.[locale] ?? signal.description;
+          const isSelected = selectedSignalTimestamp === signal.timestamp;
           return (
             <div
               key={`${signal.timestamp}-${signal.rule}`}
+              onClick={() =>
+                setSelectedSignalTimestamp(isSelected ? null : signal.timestamp)
+              }
               className={`
                 flex flex-col gap-1.5 px-4 py-3 border-b border-border-subtle last:border-0
-                hover:bg-panel-hover transition-colors
-                ${idx === 0 ? 'bg-panel-hover/40' : ''}
+                hover:bg-panel-hover transition-colors cursor-pointer
+                ${isSelected ? 'bg-accent/10 border-l-2 border-l-accent' : idx === 0 ? 'bg-panel-hover/40' : ''}
               `}
             >
               <div className="flex items-center justify-between gap-2">

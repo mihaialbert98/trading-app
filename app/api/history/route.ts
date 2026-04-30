@@ -24,7 +24,7 @@ const querySchema = z.object({
     .min(1, 'Symbol is required')
     .max(20, 'Symbol too long')
     .regex(/^[A-Za-z0-9.\-^=]+$/, 'Invalid symbol format'),
-  interval: z.enum(['1d', '1wk', '1mo']).default('1d'),
+  interval: z.enum(['1h', '1d', '1wk', '1mo']).default('1d'),
   range: z
     .enum(['1d', '5d', '1mo', '3mo', '6mo', '1y', '5y'])
     .default('1y'),

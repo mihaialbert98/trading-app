@@ -67,6 +67,7 @@ interface ChartCoreProps {
   signals: SignalEvent[];
   indicators: IndicatorsData;
   activeIndicators: IndicatorType[];
+  selectedSignalTimestamp: number | null;
 }
 
 function toTime(ts: number): Time {
@@ -79,9 +80,11 @@ function toLineData(ohlcv: OHLCV[], values: (number | null)[]) {
     .filter((d): d is { time: Time; value: number } => d.value !== null && d.value !== undefined);
 }
 
-export default function ChartCore({ ohlcv, signals, indicators, activeIndicators }: ChartCoreProps) {
+export default function ChartCore({ ohlcv, signals, indicators, activeIndicators, selectedSignalTimestamp }: ChartCoreProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const mainChartRef = useRef<IChartApi | null>(null);
+  const highlightSeriesRef = useRef<ReturnType<IChartApi['addSeries']> | null>(null);
 
   const buildCharts = useCallback(() => {
     if (!containerRef.current || ohlcv.length === 0) return;
@@ -146,6 +149,7 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
       height: mainHeight,
     });
     allCharts.push(mainChart);
+    mainChartRef.current = mainChart;
 
     // Candlestick
     const candleSeries = mainChart.addSeries(CandlestickSeries, {
@@ -425,6 +429,8 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
     cleanupRef.current = () => {
       ro.disconnect();
       allCharts.forEach((c) => { try { c.remove(); } catch { /* ignore */ } });
+      mainChartRef.current = null;
+      highlightSeriesRef.current = null;
     };
   }, [ohlcv, signals, indicators, activeIndicators]);
 
@@ -437,6 +443,47 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
       }
     };
   }, [buildCharts]);
+
+  useEffect(() => {
+    const chart = mainChartRef.current;
+    if (!chart) return;
+
+    if (highlightSeriesRef.current) {
+      try { chart.removeSeries(highlightSeriesRef.current); } catch { /* ignore */ }
+      highlightSeriesRef.current = null;
+    }
+
+    if (!selectedSignalTimestamp || ohlcv.length === 0) return;
+
+    const t = toTime(selectedSignalTimestamp) as number;
+    const candleTimes = ohlcv.map((c) => toTime(c.timestamp) as number);
+    const closest = candleTimes.reduce((best, ct) =>
+      Math.abs(ct - t) < Math.abs(best - t) ? ct : best
+    );
+
+    const hl = chart.addSeries(LineSeries, {
+      color: '#0EA5E9',
+      lineWidth: 1 as const,
+      lineStyle: LineStyle.Dashed,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    const prices = ohlcv.map((c) => c.close);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const mid = (minPrice + maxPrice) / 2;
+    hl.setData([{ time: closest as Time, value: mid }]);
+    highlightSeriesRef.current = hl;
+
+    const idx = candleTimes.indexOf(closest);
+    const visibleBars = 60;
+    chart.timeScale().setVisibleLogicalRange({
+      from: idx - visibleBars / 2,
+      to: idx + visibleBars / 2,
+    });
+  }, [selectedSignalTimestamp, ohlcv]);
 
   return (
     <div

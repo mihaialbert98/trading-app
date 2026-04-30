@@ -5,16 +5,19 @@ import { crossesBelow, crossesBelowValue } from '@/lib/utils/crossover';
 /**
  * Detect all sell signals across the full OHLCV history.
  *
- * S1: RSI crosses below 70 AND (MACD crosses below 0 on same candle OR within 2-candle window) → STRONG_SELL
+ * S1: RSI crosses below 70 AND MACD crosses below Signal line within 3-candle window → STRONG_SELL
  * S2: MACD line crosses below Signal line while RSI > 60 → WARNING
  * S3: Close crosses below 20-day EMA AND 2+ consecutive down candles preceding → SELL
+ * S4: MACD crosses below 0 AND MACD line is below Signal line → SELL
  */
 export function detectSellSignals(ctx: SignalContext): SignalEvent[] {
   const { ohlcv, rsi, macd, ema20 } = ctx;
   const signals: SignalEvent[] = [];
 
-  // For S1: track indices where RSI crossed below 70 so we can check the 2-candle window
+  // For S1: track indices where RSI crossed below 70 so we can check the 3-candle window
   const rsiCrossedBelow70At: number[] = [];
+  // For S1: track indices where MACD crossed below Signal line
+  const macdCrossedBelowSignalAt: number[] = [];
 
   for (let i = 1; i < ohlcv.length; i++) {
     const candle = ohlcv[i];
@@ -28,22 +31,37 @@ export function detectSellSignals(ctx: SignalContext): SignalEvent[] {
     const signalPrev = macd.signal[i - 1];
 
     // ------- S1 -------
-    // First, record if RSI crossed below 70 on this candle
+    // Track RSI crossing below 70 (overbought exit)
     if (crossesBelow(rsiPrev, rsiCurr, 70)) {
       rsiCrossedBelow70At.push(i);
     }
 
-    // MACD crossing below 0
-    const macdCrossesBelowZero = crossesBelow(macdLinePrev, macdLineCurr, 0);
+    // Track MACD line crossing below Signal line (momentum reversal)
+    const macdCrossedBelowSignal = crossesBelowValue(
+      macdLinePrev,
+      macdLineCurr,
+      signalPrev,
+      signalCurr,
+    );
+    if (macdCrossedBelowSignal) {
+      macdCrossedBelowSignalAt.push(i);
+    }
 
-    if (macdCrossesBelowZero) {
-      // Check if any RSI-below-70 crossing happened on this candle or within the last 2 candles
-      const windowStart = i - 2;
-      const hasRecentRsiCross = rsiCrossedBelow70At.some(
-        (idx) => idx >= windowStart && idx <= i,
+    // S1 fires when both events occur within a 3-candle window of each other
+    const window = 3;
+    const rsiRecentCross = rsiCrossedBelow70At.some(
+      (idx) => idx >= i - window && idx <= i,
+    );
+    const macdRecentCross = macdCrossedBelowSignalAt.some(
+      (idx) => idx >= i - window && idx <= i,
+    );
+
+    if (rsiRecentCross && macdRecentCross) {
+      // Avoid emitting S1 repeatedly on consecutive candles for the same crossing pair
+      const alreadyEmitted = signals.some(
+        (s) => s.rule === 'S1' && (candle.timestamp - s.timestamp) / 1000 < window * 24 * 3600,
       );
-
-      if (hasRecentRsiCross) {
+      if (!alreadyEmitted) {
         signals.push({
           timestamp: candle.timestamp,
           type: 'STRONG_SELL',
@@ -54,15 +72,30 @@ export function detectSellSignals(ctx: SignalContext): SignalEvent[] {
       }
     }
 
-    // ------- S2 -------
-    // MACD line crosses below Signal line while RSI > 60
-    const macdCrossedBelowSignal = crossesBelowValue(
-      macdLinePrev,
-      macdLineCurr,
-      signalPrev,
-      signalCurr,
+    // ------- S4 -------
+    // MACD crosses below 0 AND MACD line is below Signal line (trend confirmed bearish)
+    const macdCrossesBelowZero = crossesBelow(macdLinePrev, macdLineCurr, 0);
+    const alreadyS1OnThisCandle = signals.some(
+      (s) => s.rule === 'S1' && s.timestamp === candle.timestamp,
     );
+    if (
+      macdCrossesBelowZero &&
+      !alreadyS1OnThisCandle &&
+      macdLineCurr !== null &&
+      signalCurr !== null &&
+      macdLineCurr < signalCurr
+    ) {
+      signals.push({
+        timestamp: candle.timestamp,
+        type: 'SELL',
+        rule: 'S4',
+        price: candle.close,
+        description: 'Vânzare — MACD trece sub zero',
+      });
+    }
 
+    // ------- S2 -------
+    // MACD line crosses below Signal line while RSI > 60 (macdCrossedBelowSignal computed above for S1)
     if (macdCrossedBelowSignal && rsiCurr !== null && rsiCurr > 60) {
       signals.push({
         timestamp: candle.timestamp,

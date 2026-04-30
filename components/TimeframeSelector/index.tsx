@@ -4,8 +4,8 @@ import { useStore } from '@/store';
 import type { Timeframe, Interval } from '@/store';
 
 const TIMEFRAMES: { label: string; tf: Timeframe; interval: Interval }[] = [
-  { label: '1D', tf: '1d', interval: '1d' },
-  { label: '5D', tf: '5d', interval: '1d' },
+  { label: '1D', tf: '1d', interval: '1h' },
+  { label: '5D', tf: '5d', interval: '1h' },
   { label: '1M', tf: '1mo', interval: '1d' },
   { label: '3M', tf: '3mo', interval: '1d' },
   { label: '6M', tf: '6mo', interval: '1d' },

@@ -32,6 +32,8 @@ export default function SignalBadge({ type, rule, pulse = false }: SignalBadgePr
       ? tr('strongSell')
       : tr('warning');
 
+  const ruleLabel = rule.startsWith('C:') ? 'Custom' : rule;
+
   return (
     <span
       className={`
@@ -42,7 +44,7 @@ export default function SignalBadge({ type, rule, pulse = false }: SignalBadgePr
     >
       {type === 'STRONG_BUY' || type === 'BUY' ? '▲' : type === 'WARNING' ? '◆' : '▼'}
       {label}
-      <span className="opacity-70">({rule})</span>
+      <span className="opacity-70">({ruleLabel})</span>
     </span>
   );
 }

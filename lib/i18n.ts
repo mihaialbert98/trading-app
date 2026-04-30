@@ -116,9 +116,11 @@ export const signalDescriptions: Record<string, Record<Locale, string>> = {
     ro: 'Cumpărare — atingere Bollinger inferior',
     en: 'Oversold BUY — Bollinger touch',
   },
+  B5: { ro: 'Cumpărare — MACD trece peste zero', en: 'BUY — MACD zero-line crossover' },
   S1: { ro: 'Vânzare Puternică', en: 'Strong SELL' },
   S2: { ro: 'Avertisment Timpuriu de Vânzare', en: 'Early SELL Warning' },
   S3: { ro: 'Vânzare pe Trend', en: 'Trend SELL' },
+  S4: { ro: 'Vânzare — MACD trece sub zero', en: 'SELL — MACD zero-line crossover' },
 };
 
 // Hook to get translator

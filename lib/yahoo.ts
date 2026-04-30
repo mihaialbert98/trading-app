@@ -153,7 +153,7 @@ export async function getQuote(symbol: string): Promise<Quote> {
 
 export async function getHistory(
   symbol: string,
-  interval: '1d' | '1wk' | '1mo',
+  interval: '1h' | '1d' | '1wk' | '1mo',
   range: Range,
 ): Promise<OHLCV[]> {
   const cacheKey = `history:${symbol.toUpperCase()}:${interval}:${range}`;
@@ -162,25 +162,46 @@ export async function getHistory(
 
   const { period1, period2 } = rangeToPeriod(range);
 
-  const rows = await yf.historical(symbol, {
-    period1,
-    period2,
-    interval,
-    events: 'history',
-    includeAdjustedClose: false,
-  });
+  let ohlcv: OHLCV[];
 
-  const ohlcv: OHLCV[] = rows
-    .map((row) => ({
-      timestamp: row.date.getTime(),
-      open: row.open,
-      high: row.high,
-      low: row.low,
-      close: row.close,
-      volume: row.volume,
-    }))
-    // Sort ascending by timestamp
-    .sort((a, b) => a.timestamp - b.timestamp);
+  if (interval === '1h') {
+    // Use chart() for intraday — historical() only supports daily+
+    const result = await yf.chart(symbol, {
+      period1,
+      period2,
+      interval: '1h',
+    });
+    const quotes = result.quotes ?? [];
+    ohlcv = quotes
+      .filter((q) => q.open != null && q.close != null)
+      .map((q) => ({
+        timestamp: (q.date instanceof Date ? q.date : new Date(q.date)).getTime(),
+        open: q.open!,
+        high: q.high!,
+        low: q.low!,
+        close: q.close!,
+        volume: q.volume ?? 0,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+  } else {
+    const rows = await yf.historical(symbol, {
+      period1,
+      period2,
+      interval,
+      events: 'history',
+      includeAdjustedClose: false,
+    });
+    ohlcv = rows
+      .map((row) => ({
+        timestamp: row.date.getTime(),
+        open: row.open,
+        high: row.high,
+        low: row.low,
+        close: row.close,
+        volume: row.volume,
+      }))
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
 
   setCached(cacheKey, ohlcv, TTL_HISTORY);
   return ohlcv;

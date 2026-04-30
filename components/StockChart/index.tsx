@@ -175,7 +175,7 @@ function QuoteBar() {
 }
 
 export default function StockChart() {
-  const { selectedSymbol, activeIndicators, interval, timeframe } = useStore();
+  const { selectedSymbol, activeIndicators, interval, timeframe, selectedSignalTimestamp } = useStore();
   const { data: ohlcv, signals, isLoading, error } = useStockData(
     selectedSymbol,
     interval,
@@ -202,6 +202,7 @@ export default function StockChart() {
             signals={signals}
             indicators={indicators}
             activeIndicators={activeIndicators}
+            selectedSignalTimestamp={selectedSignalTimestamp}
           />
         )}
 
