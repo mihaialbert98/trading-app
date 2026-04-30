@@ -63,7 +63,8 @@ export function useStockData(
 
   const { data, isLoading, error, mutate } = useSWR<HistoryResponse>(key, fetcher, {
     revalidateOnFocus: false,
-    dedupingInterval: 60000,
+    refreshInterval: isMarketHours() ? 30000 : 0,
+    dedupingInterval: 25000,
   });
 
   return {

@@ -115,6 +115,7 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
         textColor: TEXT_COLOR,
         fontFamily: '"IBM Plex Mono", monospace',
         fontSize: 11,
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: GRID_COLOR },
