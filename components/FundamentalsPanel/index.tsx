@@ -6,6 +6,7 @@ import { useStore } from '@/store';
 import { useT } from '@/lib/i18n';
 import { useTranslatedText } from '@/hooks/useTranslation';
 import CompanyModal from '@/components/CompanyModal';
+import Widget from '@/components/Widget';
 import type { CompanyInfo } from '@/types/stock';
 
 const fetcher = (url: string): Promise<CompanyInfo> =>
@@ -54,25 +55,17 @@ function AnalystRatingBar({
 }) {
   const pct = ((rating - 1) / 4) * 100;
   const ratingText =
-    rating <= 1.5
-      ? strongBuyLabel
-      : rating <= 2.5
-      ? 'Buy'
-      : rating <= 3.5
-      ? 'Hold'
-      : rating <= 4.5
-      ? 'Sell'
-      : strongSellLabel;
+    rating <= 1.5 ? strongBuyLabel
+    : rating <= 2.5 ? 'Buy'
+    : rating <= 3.5 ? 'Hold'
+    : rating <= 4.5 ? 'Sell'
+    : strongSellLabel;
   const color =
-    rating <= 1.5
-      ? 'bg-strong-buy'
-      : rating <= 2.5
-      ? 'bg-gain'
-      : rating <= 3.5
-      ? 'bg-warning'
-      : rating <= 4.5
-      ? 'bg-loss'
-      : 'bg-strong-sell';
+    rating <= 1.5 ? 'bg-strong-buy'
+    : rating <= 2.5 ? 'bg-gain'
+    : rating <= 3.5 ? 'bg-warning'
+    : rating <= 4.5 ? 'bg-loss'
+    : 'bg-strong-sell';
 
   return (
     <div>
@@ -81,10 +74,7 @@ function AnalystRatingBar({
         <span className="text-xs font-mono text-text-primary">{ratingText}</span>
       </div>
       <div className="h-2 bg-border-subtle rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${color}`}
-          style={{ width: `${pct}%` }}
-        />
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
       <div className="flex justify-between text-[10px] font-mono text-text-dim mt-0.5">
         <span>{strongBuyLabel}</span>
@@ -118,30 +108,9 @@ function SkeletonFundamentals() {
   );
 }
 
-function ExpandIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
-      <path
-        d="M8.5 1.5H12.5V5.5M5.5 8.5L12.5 1.5M1.5 5.5V1.5H5.5M8.5 12.5H12.5V8.5M5.5 5.5L1.5 12.5M8.5 8.5L12.5 12.5"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function SpinnerIcon() {
   return (
-    <svg
-      className="animate-spin shrink-0"
-      width="12"
-      height="12"
-      viewBox="0 0 14 14"
-      fill="none"
-      aria-hidden
-    >
+    <svg className="animate-spin shrink-0" width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden>
       <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
       <path d="M7 2a5 5 0 0 1 5 5" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" />
     </svg>
@@ -163,25 +132,30 @@ export default function FundamentalsPanel() {
 
   const { translated: translatedDesc, isTranslating } = useTranslatedText(data?.description);
 
+  const detailsButton = data ? (
+    <button
+      onClick={() => setModalOpen(true)}
+      className="flex items-center gap-1 text-xs font-sans text-accent hover:opacity-70 transition-opacity whitespace-nowrap"
+      aria-label={tr('expandDetails')}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+        <path
+          d="M8.5 1.5H12.5V5.5M5.5 8.5L12.5 1.5M1.5 5.5V1.5H5.5M8.5 12.5H12.5V8.5M5.5 5.5L1.5 12.5M8.5 8.5L12.5 12.5"
+          stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"
+        />
+      </svg>
+      {tr('expandDetails')}
+    </button>
+  ) : null;
+
   return (
     <>
-      <div className="bg-panel border border-border-subtle rounded-lg overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle gap-2">
-          <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase truncate">
-            {tr('fundamentalsTitle')}
-          </h2>
-          {data && (
-            <button
-              onClick={() => setModalOpen(true)}
-              className="flex items-center gap-1 text-xs font-sans text-accent hover:opacity-70 transition-opacity shrink-0 whitespace-nowrap"
-              aria-label={tr('expandDetails')}
-            >
-              <ExpandIcon />
-              {tr('expandDetails')}
-            </button>
-          )}
-        </div>
-
+      <Widget
+        id="fundamentals"
+        title={tr('fundamentalsTitle')}
+        titleRight={detailsButton}
+        tourAttr="fundamentals"
+      >
         {!selectedSymbol && (
           <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
             {tr('selectStockFundamentals')}
@@ -198,7 +172,6 @@ export default function FundamentalsPanel() {
 
         {data && !isLoading && (
           <div className="p-4 space-y-4">
-            {/* Company header */}
             <div>
               <h3 className="text-base font-sans font-semibold text-text-primary leading-tight">
                 {data.name}
@@ -220,7 +193,6 @@ export default function FundamentalsPanel() {
               </div>
             </div>
 
-            {/* Description — translated if locale=ro */}
             {(isTranslating || translatedDesc) && (
               <div>
                 {isTranslating ? (
@@ -243,26 +215,15 @@ export default function FundamentalsPanel() {
               </div>
             )}
 
-            {/* Key metrics grid */}
             <div className="grid grid-cols-2 gap-3 pt-1">
               <MetricItem label={tr('marketCap')} value={formatMarketCap(data.marketCap)} />
               <MetricItem label={tr('peRatio')} value={formatNumber(data.peRatio, 1)} />
-              <MetricItem
-                label={tr('eps')}
-                value={data.eps !== null ? `$${formatNumber(data.eps)}` : '—'}
-              />
+              <MetricItem label={tr('eps')} value={data.eps !== null ? `$${formatNumber(data.eps)}` : '—'} />
               <MetricItem label={tr('dividend')} value={formatPercent(data.dividendYield)} />
-              <MetricItem
-                label={tr('week52High')}
-                value={data.week52High !== null ? `$${formatNumber(data.week52High)}` : '—'}
-              />
-              <MetricItem
-                label={tr('week52Low')}
-                value={data.week52Low !== null ? `$${formatNumber(data.week52Low)}` : '—'}
-              />
+              <MetricItem label={tr('week52High')} value={data.week52High !== null ? `$${formatNumber(data.week52High)}` : '—'} />
+              <MetricItem label={tr('week52Low')} value={data.week52Low !== null ? `$${formatNumber(data.week52Low)}` : '—'} />
             </div>
 
-            {/* Analyst rating */}
             {data.analystRating !== null && (
               <div className="pt-1">
                 <AnalystRatingBar
@@ -282,7 +243,7 @@ export default function FundamentalsPanel() {
             )}
           </div>
         )}
-      </div>
+      </Widget>
 
       {modalOpen && selectedSymbol && (
         <CompanyModal

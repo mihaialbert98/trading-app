@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useStore } from '@/store';
+import Widget from '@/components/Widget';
 import type {
   CustomRule,
   CustomCondition,
@@ -355,7 +356,6 @@ function RuleRow({
 
 export default function CustomSignalBuilder() {
   const { customRules, addCustomRule, updateCustomRule, removeCustomRule, toggleCustomRule } = useStore();
-  const [open, setOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<CustomRule | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -379,77 +379,48 @@ export default function CustomSignalBuilder() {
     setEditingRule(null);
   }
 
+  const badge = customRules.length > 0
+    ? `${customRules.filter((r) => r.enabled).length}/${customRules.length}`
+    : undefined;
+
   return (
-    <div className="bg-panel border border-border-subtle rounded-lg overflow-hidden">
-      {/* Header */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 border-b border-border-subtle hover:bg-panel-hover transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-accent" aria-hidden>
-            <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3" />
-            <path d="M7 4v3l2 1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          </svg>
-          <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase">
-            Semnale Personalizate
-          </h2>
-          {customRules.length > 0 && (
-            <span className="text-xs font-mono text-text-muted">
-              {customRules.filter((r) => r.enabled).length}/{customRules.length}
-            </span>
-          )}
-        </div>
-        <svg
-          width="12" height="12" viewBox="0 0 12 12" fill="none"
-          className={`text-text-dim transition-transform ${open ? 'rotate-180' : ''}`}
-        >
-          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-
-      {open && (
+    <Widget id="custom-signals" title="Semnale Personalizate" badge={badge} tourAttr="custom-signals">
+      {customRules.length > 0 && !showForm && (
         <div>
-          {/* Rule list */}
-          {customRules.length > 0 && !showForm && (
-            <div>
-              {customRules.map((rule) => (
-                <RuleRow
-                  key={rule.id}
-                  rule={rule}
-                  onEdit={() => handleEdit(rule)}
-                  onDelete={() => removeCustomRule(rule.id)}
-                  onToggle={() => toggleCustomRule(rule.id)}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Form */}
-          {showForm ? (
-            <div className="p-4">
-              <p className="text-xs font-sans text-text-muted mb-3">
-                {editingRule ? 'Editează semnalul' : 'Semnal nou'}
-              </p>
-              <RuleForm
-                initial={editingRule ?? undefined}
-                onSave={handleSave}
-                onCancel={handleCancel}
-              />
-            </div>
-          ) : (
-            <button
-              onClick={() => { setEditingRule(null); setShowForm(true); }}
-              className="w-full flex items-center justify-center gap-2 py-3 text-xs font-mono text-accent hover:bg-panel-hover transition-colors border-t border-border-subtle"
-            >
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              Adaugă semnal nou
-            </button>
-          )}
+          {customRules.map((rule) => (
+            <RuleRow
+              key={rule.id}
+              rule={rule}
+              onEdit={() => handleEdit(rule)}
+              onDelete={() => removeCustomRule(rule.id)}
+              onToggle={() => toggleCustomRule(rule.id)}
+            />
+          ))}
         </div>
       )}
-    </div>
+
+      {showForm ? (
+        <div className="p-4">
+          <p className="text-xs font-sans text-text-muted mb-3">
+            {editingRule ? 'Editează semnalul' : 'Semnal nou'}
+          </p>
+          <RuleForm
+            initial={editingRule ?? undefined}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
+        </div>
+      ) : (
+        <button
+          onClick={() => { setEditingRule(null); setShowForm(true); }}
+          className="w-full flex items-center justify-center gap-2 py-3 text-xs font-mono text-accent hover:bg-panel-hover transition-colors border-t border-border-subtle"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          Adaugă semnal nou
+        </button>
+      )}
+    </Widget>
   );
 }

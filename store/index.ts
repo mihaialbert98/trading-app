@@ -13,6 +13,14 @@ export interface WatchlistItem {
   name: string;
 }
 
+export type WidgetId = 'signals' | 'custom-signals' | 'fundamentals' | 'news';
+
+export interface WidgetConfig {
+  id: WidgetId;
+  visible: boolean;
+  collapsed: boolean;
+}
+
 interface StoreState {
   selectedSymbol: string | null;
   selectedName: string | null;
@@ -25,6 +33,7 @@ interface StoreState {
   theme: 'dark' | 'light';
   locale: 'ro' | 'en';
   customRules: CustomRule[];
+  widgets: WidgetConfig[];
   // actions
   setSelectedSymbol: (symbol: string, name: string) => void;
   addCustomRule: (rule: CustomRule) => void;
@@ -39,6 +48,8 @@ interface StoreState {
   setTimeframe: (tf: Timeframe, interval: Interval) => void;
   toggleTheme: () => void;
   setLocale: (locale: 'ro' | 'en') => void;
+  toggleWidgetVisible: (id: WidgetId) => void;
+  toggleWidgetCollapsed: (id: WidgetId) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -56,6 +67,12 @@ export const useStore = create<StoreState>()(
       theme: 'dark',
       locale: 'ro',
       customRules: [],
+      widgets: [
+        { id: 'signals', visible: true, collapsed: false },
+        { id: 'custom-signals', visible: true, collapsed: false },
+        { id: 'fundamentals', visible: true, collapsed: false },
+        { id: 'news', visible: true, collapsed: false },
+      ],
 
       setSelectedSymbol: (symbol: string, name: string) =>
         set({ selectedSymbol: symbol, selectedName: name }),
@@ -91,6 +108,20 @@ export const useStore = create<StoreState>()(
 
       setLocale: (locale: 'ro' | 'en') => set({ locale }),
 
+      toggleWidgetVisible: (id: WidgetId) =>
+        set({
+          widgets: get().widgets.map((w) =>
+            w.id === id ? { ...w, visible: !w.visible } : w,
+          ),
+        }),
+
+      toggleWidgetCollapsed: (id: WidgetId) =>
+        set({
+          widgets: get().widgets.map((w) =>
+            w.id === id ? { ...w, collapsed: !w.collapsed } : w,
+          ),
+        }),
+
       addCustomRule: (rule: CustomRule) =>
         set({ customRules: [...get().customRules, rule] }),
 
@@ -120,6 +151,7 @@ export const useStore = create<StoreState>()(
         timeframe: state.timeframe,
         interval: state.interval,
         customRules: state.customRules,
+        widgets: state.widgets,
       }),
     }
   )

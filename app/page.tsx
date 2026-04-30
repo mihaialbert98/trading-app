@@ -7,11 +7,8 @@ import StockChart from '@/components/StockChart';
 import TimeframeSelector from '@/components/TimeframeSelector';
 import IndicatorToggle from '@/components/IndicatorToggle';
 import IndicatorPanel from '@/components/IndicatorPanel';
-import SignalLog from '@/components/SignalLog';
-import CustomSignalBuilder from '@/components/CustomSignalBuilder';
-import FundamentalsPanel from '@/components/FundamentalsPanel';
-import NewsPanel from '@/components/NewsPanel';
 import GuidedTour from '@/components/GuidedTour';
+import RightPanel from '@/components/RightPanel';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { useT } from '@/lib/i18n';
@@ -230,15 +227,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div
-          className="hidden md:flex flex-col gap-3 w-[320px] shrink-0 overflow-y-auto pb-2"
-          style={{ maxHeight: 'calc(100dvh - 72px)' }}
-        >
-          <div data-tour="signal-log"><SignalLog /></div>
-          <div data-tour="custom-signals"><CustomSignalBuilder /></div>
-          <div data-tour="fundamentals"><FundamentalsPanel /></div>
-          <NewsPanel />
-        </div>
+        <RightPanel />
       </div>
 
       <footer className="px-4 py-2 border-t border-border-subtle text-center bg-panel">

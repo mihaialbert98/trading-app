@@ -85,6 +85,8 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
   const cleanupRef = useRef<(() => void) | null>(null);
   const mainChartRef = useRef<IChartApi | null>(null);
   const highlightSeriesRef = useRef<ReturnType<IChartApi['addSeries']> | null>(null);
+  const candleSeriesRef = useRef<ReturnType<IChartApi['addSeries']> | null>(null);
+  const signalMarkersRef = useRef<SeriesMarker<Time>[]>([]);
 
   const buildCharts = useCallback(() => {
     if (!containerRef.current || ohlcv.length === 0) return;
@@ -150,6 +152,8 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
     });
     allCharts.push(mainChart);
     mainChartRef.current = mainChart;
+    candleSeriesRef.current = null;
+    signalMarkersRef.current = [];
 
     // Candlestick
     const candleSeries = mainChart.addSeries(CandlestickSeries, {
@@ -169,6 +173,7 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
       close: d.close,
     }));
     candleSeries.setData(candleData);
+    candleSeriesRef.current = candleSeries;
 
     // Bollinger Bands overlay
     if (activeIndicators.includes('BOLLINGER') && indicators.bollinger) {
@@ -239,6 +244,7 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
 
       if (markers.length > 0) {
         createSeriesMarkers(candleSeries, markers);
+        signalMarkersRef.current = markers;
       }
     }
 
@@ -448,12 +454,16 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
     const chart = mainChartRef.current;
     if (!chart) return;
 
-    if (highlightSeriesRef.current) {
-      try { chart.removeSeries(highlightSeriesRef.current); } catch { /* ignore */ }
-      highlightSeriesRef.current = null;
-    }
+    const candleSeries = candleSeriesRef.current;
+    const baseMarkers = signalMarkersRef.current;
 
-    if (!selectedSignalTimestamp || ohlcv.length === 0) return;
+    // Restore plain markers when deselecting
+    if (!selectedSignalTimestamp || ohlcv.length === 0) {
+      if (candleSeries && baseMarkers.length > 0) {
+        createSeriesMarkers(candleSeries, baseMarkers);
+      }
+      return;
+    }
 
     const t = toTime(selectedSignalTimestamp) as number;
     const candleTimes = ohlcv.map((c) => toTime(c.timestamp) as number);
@@ -461,28 +471,24 @@ export default function ChartCore({ ohlcv, signals, indicators, activeIndicators
       Math.abs(ct - t) < Math.abs(best - t) ? ct : best
     );
 
-    const hl = chart.addSeries(LineSeries, {
-      color: '#0EA5E9',
-      lineWidth: 1 as const,
-      lineStyle: LineStyle.Dashed,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      crosshairMarkerVisible: false,
-    });
+    // Re-render markers: selected one gets larger size + amber colour
+    if (candleSeries && baseMarkers.length > 0) {
+      const updated = baseMarkers.map((m) =>
+        (m.time as number) === closest
+          ? { ...m, color: '#F59E0B', size: 4, text: `► ${m.text}` }
+          : { ...m }
+      );
+      createSeriesMarkers(candleSeries, updated);
+    }
 
-    const prices = ohlcv.map((c) => c.close);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
-    const mid = (minPrice + maxPrice) / 2;
-    hl.setData([{ time: closest as Time, value: mid }]);
-    highlightSeriesRef.current = hl;
-
+    // Scroll chart to centre on the selected candle
     const idx = candleTimes.indexOf(closest);
-    const visibleBars = 60;
-    chart.timeScale().setVisibleLogicalRange({
-      from: idx - visibleBars / 2,
-      to: idx + visibleBars / 2,
-    });
+    if (idx !== -1) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: idx - 30,
+        to: idx + 30,
+      });
+    }
   }, [selectedSignalTimestamp, ohlcv]);
 
   return (
