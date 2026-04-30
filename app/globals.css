@@ -1,26 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
 @import "tailwindcss";
 
+@theme {
+  /* Colors */
+  --color-navy: #0f172a;
+  --color-panel: #1e293b;
+  --color-panel-hover: #253347;
+  --color-accent: #0EA5E9;
+  --color-accent-dim: #0284c7;
+  --color-gain: #22C55E;
+  --color-loss: #EF4444;
+  --color-border-subtle: #334155;
+  --color-text-primary: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-text-dim: #64748b;
+  --color-warning: #F59E0B;
+  --color-strong-buy: #16A34A;
+  --color-strong-sell: #DC2626;
+
+  /* Fonts */
+  --font-family-mono: 'IBM Plex Mono', monospace;
+  --font-family-sans: 'DM Sans', sans-serif;
+}
+
+/* CSS custom properties for use outside Tailwind */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --navy: #0f172a;
+  --panel: #1e293b;
+  --panel-hover: #253347;
+  --accent: #0EA5E9;
+  --accent-dim: #0284c7;
+  --gain: #22C55E;
+  --loss: #EF4444;
+  --border: #334155;
+  --text-primary: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  --warning: #F59E0B;
+  --strong-buy: #16A34A;
+  --strong-sell: #DC2626;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--navy);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--navy);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}
+
+/* Pulse animation for latest signal */
+@keyframes signal-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.signal-pulse {
+  animation: signal-pulse 2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--panel) 25%,
+    var(--panel-hover) 50%,
+    var(--panel) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* Chart container resets */
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Numeric tabular alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

@@ -1,0 +1,80 @@
+'use client';
+
+import useSWR from 'swr';
+import { useStore } from '@/store';
+import NewsCard from '@/components/NewsCard';
+import type { NewsItem } from '@/types/stock';
+
+const fetcher = (url: string): Promise<NewsItem[]> =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+    return res.json() as Promise<NewsItem[]>;
+  });
+
+function SkeletonNews() {
+  return (
+    <div className="space-y-2 p-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="flex gap-3">
+          <div className="skeleton w-16 h-16 rounded shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="skeleton h-4 rounded w-full" />
+            <div className="skeleton h-4 rounded w-3/4" />
+            <div className="skeleton h-3 rounded w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function NewsPanel() {
+  const selectedSymbol = useStore((s) => s.selectedSymbol);
+
+  const { data, isLoading, error } = useSWR<NewsItem[]>(
+    selectedSymbol ? `/api/news?symbol=${encodeURIComponent(selectedSymbol)}` : null,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 300000 }
+  );
+
+  return (
+    <div className="bg-panel border border-border-subtle rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+        <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase">
+          News
+        </h2>
+        {data && data.length > 0 && (
+          <span className="text-xs font-mono text-text-muted">{data.length} articole</span>
+        )}
+      </div>
+
+      {!selectedSymbol && (
+        <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
+          Selectează o acțiune pentru știri
+        </div>
+      )}
+
+      {selectedSymbol && isLoading && <SkeletonNews />}
+
+      {selectedSymbol && error && (
+        <div className="px-4 py-4 text-center text-loss text-sm font-sans">
+          Eroare la încărcarea știrilor
+        </div>
+      )}
+
+      {data && !isLoading && data.length === 0 && (
+        <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
+          Nu există știri recente
+        </div>
+      )}
+
+      {data && !isLoading && data.length > 0 && (
+        <div className="p-3 space-y-2">
+          {data.map((item, idx) => (
+            <NewsCard key={`${item.publishedAt}-${idx}`} item={item} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

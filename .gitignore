@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+**/.DS_Store
