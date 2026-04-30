@@ -208,8 +208,8 @@ export default function HelpPage() {
     },
     signalsTitle: { ro: 'Semnale Automate de Tranzacționare', en: 'Automatic Trading Signals' },
     signalsIntro: {
-      ro: 'Semnalele sunt detectate automat pe baza regulilor tehnice definite, aplicând logica de încrucișare strictă. Semnalele apar pe grafic ca săgeți și în panoul din dreapta. Fă clic pe un semnal din listă pentru a naviga la acel moment pe grafic.',
-      en: 'Signals are automatically detected based on defined technical rules, applying strict crossing logic. Signals appear on the chart as arrows and in the right panel. Click a signal in the list to navigate to that moment on the chart.',
+      ro: 'Semnalele sunt detectate automat pe baza regulilor tehnice definite, aplicând logica de încrucișare strictă. Sunt afișate cel mult 20 semnale recente. Semnalele apar pe grafic ca săgeți și în panoul din dreapta. Fă clic pe un semnal din listă pentru a naviga la acel moment — lumânarea se evidențiază cu o săgeată portocalie mai mare.',
+      en: 'Signals are automatically detected based on defined technical rules, applying strict crossing logic. At most 20 recent signals are shown. Signals appear on the chart as arrows and in the right panel. Click a signal in the list to navigate to that moment — the candle highlights with a larger orange arrow.',
     },
     buySignals: { ro: 'Semnale de Cumpărare', en: 'Buy Signals' },
     sellSignals: { ro: 'Semnale de Vânzare', en: 'Sell Signals' },
@@ -254,10 +254,27 @@ export default function HelpPage() {
         { label: 'Persistence', desc: 'The list is saved in localStorage — it remains available when you return to the app, even after closing the browser.' },
       ],
     },
-    newsTitle: { ro: 'Știri', en: 'News' },
+    newsTitle: { ro: 'Știri Inteligente', en: 'Smart News' },
     newsBody: {
-      ro: 'Panoul Știri afișează cele mai recente articole legate de acțiunea selectată, preluate din Yahoo Finance. Fiecare articol include titlu, sursă, data publicării și un badge de sentiment automat (POZITIV / NEGATIV / NEUTRU) bazat pe analiza cuvintelor cheie din titlu. Fă clic pe articol pentru a-l deschide în tab nou.',
-      en: 'The News panel displays the most recent articles related to the selected stock, sourced from Yahoo Finance. Each article includes title, source, publication date and an automatic sentiment badge (POSITIVE / NEGATIVE / NEUTRAL) based on keyword analysis of the title. Click an article to open it in a new tab.',
+      ro: 'Panoul Știri afișează cele mai recente 10 articole legate de acțiunea selectată. Fiecare articol are un badge de sentiment (POZITIV / NEGATIV / NEUTRU). Apasă pe orice card pentru a deschide sertarul de detalii — nu mai ești redirecționat la o pagină externă.',
+      en: 'The News panel displays the 10 most recent articles for the selected stock. Each article has a sentiment badge (POSITIVE / NEGATIVE / NEUTRAL). Click any card to open the details drawer — you are no longer redirected to an external page.',
+    },
+    newsDrawerTitle: { ro: 'Sertarul de știri', en: 'News drawer' },
+    newsDrawerBody: {
+      ro: [
+        { label: 'Thumbnail + titlu', desc: 'Imaginea de copertă și titlul complet al articolului.' },
+        { label: 'Sursă & dată', desc: 'Publicația sursă și momentul publicării.' },
+        { label: 'Analiză AI', desc: 'Sugestie automată BUY / SELL / HOLD cu nivel de încredere HIGH / MEDIUM / LOW și o explicație în limbaj natural a cuvintelor cheie detectate.' },
+        { label: 'Disclaimer', desc: 'Avertisment că sugestia este generată automat din titlu și nu constituie consiliere financiară.' },
+        { label: 'Citește articolul complet', desc: 'Buton care deschide articolul original în browser, pentru a citi textul integral.' },
+      ],
+      en: [
+        { label: 'Thumbnail + title', desc: 'Cover image and full article title.' },
+        { label: 'Source & date', desc: 'Publishing outlet and publication time.' },
+        { label: 'AI Analysis', desc: 'Automatic BUY / SELL / HOLD suggestion with HIGH / MEDIUM / LOW confidence and a plain-language explanation of the detected keywords.' },
+        { label: 'Disclaimer', desc: 'Warning that the suggestion is auto-generated from the headline and does not constitute financial advice.' },
+        { label: 'Read full article', desc: 'Button that opens the original article in the browser to read the full text.' },
+      ],
     },
     tipsTitle: { ro: 'Sfaturi Practice', en: 'Practical Tips' },
     disclaimer: {
@@ -275,6 +292,23 @@ export default function HelpPage() {
       </>,
     },
     disclaimerTitle: { ro: '⚠ Disclaimer important', en: '⚠ Important disclaimer' },
+    panelsTitle: { ro: 'Panouri Laterale', en: 'Side Panels' },
+    panelsIntro: {
+      ro: 'Coloana din dreapta afișează patru panouri independente: Semnale de Tranzacționare, Semnale Personalizate, Date Fundamentale și Știri. Fiecare panou poate fi restrâns sau extins cu clic pe titlu sau pe săgeata din dreapta.',
+      en: 'The right column shows four independent panels: Trading Signals, Custom Signals, Fundamentals and News. Each panel can be collapsed or expanded by clicking its title or the chevron on the right.',
+    },
+    panelsBody: {
+      ro: [
+        { label: 'Restrângere / extindere', desc: 'Apasă titlul panoului sau săgeata (▾) pentru a-l restrânge. Un panou extins are o înălțime minimă de 400px; dacă conținutul depășește ecranul, coloana devine derulabilă.' },
+        { label: 'Gestionare vizibilitate', desc: 'Iconița de setări (⚙) din antetul coloanei deschide un meniu cu checkboxuri — poți ascunde sau afișa orice panou după preferință. Setările sunt salvate local.' },
+        { label: 'Derulare coloană', desc: 'Dacă toate panourile sunt extinse și depășesc înălțimea ecranului, coloana devine derulabilă independent față de grafic.' },
+      ],
+      en: [
+        { label: 'Collapse / expand', desc: 'Click the panel title or the chevron (▾) to collapse it. An expanded panel has a minimum height of 400px; if the combined content exceeds the screen, the column becomes scrollable.' },
+        { label: 'Visibility management', desc: 'The settings icon (⚙) in the column header opens a menu with checkboxes — you can hide or show any panel as needed. Settings are saved locally.' },
+        { label: 'Column scroll', desc: 'When all panels are expanded and exceed the screen height, the column scrolls independently from the chart.' },
+      ],
+    },
     quickstartTitle: { ro: 'Pornire Rapidă — Pas cu Pas', en: 'Quick Start — Step by Step' },
     chartTitle: { ro: 'Graficul', en: 'Chart' },
     chartBody: {
@@ -401,6 +435,19 @@ export default function HelpPage() {
                 {step.body[L]}
               </Step>
             ))}
+          </Section>
+
+          {/* ── Panels ── */}
+          <Section id="panels" title={UI.panelsTitle[L]}>
+            <p>{UI.panelsIntro[L]}</p>
+            <ul className="space-y-2 mt-3">
+              {UI.panelsBody[L].map(({ label, desc }) => (
+                <li key={label}>
+                  <strong className="text-text-primary">{label}:</strong>{' '}
+                  <span className="text-text-muted">{desc}</span>
+                </li>
+              ))}
+            </ul>
           </Section>
 
           {/* ── Chart ── */}
@@ -539,6 +586,7 @@ export default function HelpPage() {
           {/* ── News ── */}
           <Section id="news" title={UI.newsTitle[L]}>
             <p>{UI.newsBody[L]}</p>
+
             <div className="flex items-center gap-3 mt-2 flex-wrap">
               <span className="text-gain font-mono text-xs font-semibold">
                 {L === 'ro' ? 'POZITIV' : 'POSITIVE'}
@@ -552,6 +600,24 @@ export default function HelpPage() {
                 {L === 'ro' ? 'NEUTRU' : 'NEUTRAL'}
               </span>
             </div>
+
+            <h3 className="font-sans font-semibold text-text-primary text-base mt-5 mb-3">
+              {UI.newsDrawerTitle[L]}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {UI.newsDrawerBody[L].map(({ label, desc }) => (
+                <div key={label} className="rounded-lg border border-border-subtle bg-panel p-3">
+                  <p className="font-mono text-xs text-accent font-semibold mb-1">{label}</p>
+                  <p className="text-xs text-text-muted font-sans leading-relaxed">{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <Callout variant="warn">
+              {L === 'ro'
+                ? 'Sugestia BUY / SELL / HOLD este generată automat din cuvintele cheie ale titlului și nu constituie consiliere financiară. Folosiți-o ca un indiciu contextual, nu ca bază de decizie.'
+                : 'The BUY / SELL / HOLD suggestion is auto-generated from headline keywords and does not constitute financial advice. Use it as contextual color, not a decision basis.'}
+            </Callout>
           </Section>
 
           {/* ── Tips ── */}

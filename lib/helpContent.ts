@@ -9,6 +9,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { href: '#intro',         ro: 'Introducere',            en: 'Introduction' },
   { href: '#quickstart',    ro: 'Pornire rapidă',         en: 'Quick start' },
+  { href: '#panels',        ro: 'Panouri laterale',       en: 'Side panels' },
   { href: '#chart',         ro: 'Graficul',               en: 'Chart' },
   { href: '#indicators',    ro: 'Indicatori tehnici',     en: 'Technical indicators' },
   { href: '#signals',       ro: 'Semnale automate',       en: 'Automatic signals' },
@@ -17,7 +18,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '#custom-signals',ro: '  Semnale personalizate',en: '  Custom signals' },
   { href: '#fundamentals',  ro: 'Date fundamentale',      en: 'Fundamentals' },
   { href: '#watchlist',     ro: 'Lista de urmărire',      en: 'Watchlist' },
-  { href: '#news',          ro: 'Știri',                  en: 'News' },
+  { href: '#news',          ro: 'Știri inteligente',      en: 'Smart news' },
   { href: '#tips',          ro: 'Sfaturi practice',       en: 'Practical tips' },
   { href: '#disclaimer',    ro: 'Disclaimer',             en: 'Disclaimer' },
 ];
@@ -59,8 +60,8 @@ export const QUICKSTART_STEPS: StepContent[] = [
   {
     title: { ro: 'Citește și interacționează cu semnalele', en: 'Read and interact with signals' },
     body: {
-      ro: 'Panoul Semnale de Tranzacționare din dreapta afișează toate semnalele detectate, de la cel mai recent. Semnalele apar și pe grafic ca săgeți. Fă clic pe orice semnal din listă pentru a naviga la acel moment pe grafic — acesta va fi evidențiat cu o linie verticală albastră.',
-      en: 'The Trading Signals panel on the right shows all detected signals, newest first. Signals also appear on the chart as arrows. Click any signal in the list to navigate to that moment on the chart — it will be highlighted with a blue vertical line.',
+      ro: 'Panoul Semnale de Tranzacționare din dreapta afișează cele mai recente 20 semnale detectate, de la cel mai recent. Semnalele apar și pe grafic ca săgeți. Fă clic pe orice semnal din listă pentru a naviga la acel moment pe grafic — lumânarea selectată este evidențiată cu o săgeată portocalie mai mare.',
+      en: 'The Trading Signals panel on the right shows the 20 most recent detected signals, newest first. Signals also appear on the chart as arrows. Click any signal in the list to navigate to that moment on the chart — the selected candle is highlighted with a larger orange arrow.',
     },
   },
   {
@@ -68,6 +69,13 @@ export const QUICKSTART_STEPS: StepContent[] = [
     body: {
       ro: 'În panoul Semnale Personalizate poți construi propriile reguli tehnice din dropdown-uri. Alege un indicator, o condiție (trece peste / trece sub / este peste / este sub) și o valoare sau un alt indicator. Poți combina mai multe condiții cu AND. Regulile sunt salvate local și evaluate imediat pe date reale.',
       en: 'In the Custom Signals panel you can build your own technical rules using dropdowns. Choose an indicator, a condition (crosses above / crosses below / is above / is below) and a value or another indicator. You can combine multiple conditions with AND. Rules are saved locally and evaluated immediately on real data.',
+    },
+  },
+  {
+    title: { ro: 'Citește știrile inteligente', en: 'Read smart news' },
+    body: {
+      ro: 'Panoul Știri afișează cele mai recente 10 articole pentru acțiunea selectată. Apasă pe orice articol pentru a-l citi direct în aplicație — se deschide un sertar lateral cu titlul, sursa și o analiză automată BUY / SELL / HOLD cu nivel de încredere și explicație. Butonul „Citește articolul complet" deschide sursa originală.',
+      en: 'The News panel shows the 10 most recent articles for the selected stock. Click any article to read it directly in the app — a side drawer opens with the title, source and an automatic BUY / SELL / HOLD analysis with confidence level and explanation. The "Read full article" button opens the original source.',
     },
   },
 ];
@@ -295,8 +303,15 @@ export const TIPS: TipDoc[] = [
   {
     title: { ro: 'Datele au întârziere de 15 minute', en: 'Data is delayed 15 minutes' },
     body: {
-      ro: 'Datele de piață afișate au o întârziere de aproximativ 15 minute față de prețul real. Polling-ul live actualizează cotațiile la fiecare 30 de secunde în orele de tranzacționare (9:30–16:00 ET), dar nu înlocuiește un feed în timp real.',
-      en: 'Market data displayed is delayed approximately 15 minutes from the real price. Live polling updates quotes every 30 seconds during trading hours (9:30–16:00 ET), but does not replace a real-time feed.',
+      ro: 'Datele de piață afișate au o întârziere de aproximativ 15 minute față de prețul real. Polling-ul live actualizează cotațiile și adaugă lumânările noi la fiecare 30 de secunde în orele de tranzacționare (9:30–16:00 ET), dar nu înlocuiește un feed în timp real.',
+      en: 'Market data displayed is delayed approximately 15 minutes from the real price. Live polling updates quotes and adds new candles every 30 seconds during trading hours (9:30–16:00 ET), but does not replace a real-time feed.',
+    },
+  },
+  {
+    title: { ro: 'Știrile inteligente sunt orientative', en: 'Smart news suggestions are indicative' },
+    body: {
+      ro: 'Sugestia BUY / SELL / HOLD din sertarul de știri este generată automat din cuvintele cheie ale titlului articolului — nu reprezintă o recomandare financiară. Nivelul de încredere (HIGH / MEDIUM / LOW) reflectă cât de puternic este semnalul textual, nu probabilitatea reală a mișcării acțiunii.',
+      en: 'The BUY / SELL / HOLD suggestion in the news drawer is generated automatically from headline keywords — it is not a financial recommendation. The confidence level (HIGH / MEDIUM / LOW) reflects how strong the textual signal is, not the actual probability of a price move.',
     },
   },
 ];
