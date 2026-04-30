@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import useSWR from 'swr';
 import { useStore } from '@/store';
 import { useT } from '@/lib/i18n';
 import NewsCard from '@/components/NewsCard';
+import NewsDrawer from '@/components/NewsDrawer';
 import Widget from '@/components/Widget';
 import type { NewsItem } from '@/types/stock';
 
@@ -33,6 +35,7 @@ function SkeletonNews() {
 export default function NewsPanel() {
   const selectedSymbol = useStore((s) => s.selectedSymbol);
   const tr = useT();
+  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
   const { data, isLoading, error } = useSWR<NewsItem[]>(
     selectedSymbol ? `/api/news?symbol=${encodeURIComponent(selectedSymbol)}` : null,
@@ -43,34 +46,44 @@ export default function NewsPanel() {
   const badge = data && data.length > 0 ? `${data.length} ${tr('newsUnit')}` : undefined;
 
   return (
-    <Widget id="news" title={tr('newsTitle')} badge={badge}>
-      {!selectedSymbol && (
-        <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
-          {tr('selectStockNews')}
-        </div>
-      )}
+    <>
+      <Widget id="news" title={tr('newsTitle')} badge={badge}>
+        {!selectedSymbol && (
+          <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
+            {tr('selectStockNews')}
+          </div>
+        )}
 
-      {selectedSymbol && isLoading && <SkeletonNews />}
+        {selectedSymbol && isLoading && <SkeletonNews />}
 
-      {selectedSymbol && error && (
-        <div className="px-4 py-4 text-center text-loss text-sm font-sans">
-          {tr('newsError')}
-        </div>
-      )}
+        {selectedSymbol && error && (
+          <div className="px-4 py-4 text-center text-loss text-sm font-sans">
+            {tr('newsError')}
+          </div>
+        )}
 
-      {data && !isLoading && data.length === 0 && (
-        <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
-          {tr('noNews')}
-        </div>
-      )}
+        {data && !isLoading && data.length === 0 && (
+          <div className="px-4 py-6 text-center text-text-muted text-sm font-sans">
+            {tr('noNews')}
+          </div>
+        )}
 
-      {data && !isLoading && data.length > 0 && (
-        <div className="p-3 space-y-2">
-          {data.map((item, idx) => (
-            <NewsCard key={`${item.publishedAt}-${idx}`} item={item} />
-          ))}
-        </div>
+        {data && !isLoading && data.length > 0 && (
+          <div className="p-3 space-y-2">
+            {data.map((item, idx) => (
+              <NewsCard
+                key={`${item.publishedAt}-${idx}`}
+                item={item}
+                onSelect={() => setSelectedNews(item)}
+              />
+            ))}
+          </div>
+        )}
+      </Widget>
+
+      {selectedNews && (
+        <NewsDrawer item={selectedNews} onClose={() => setSelectedNews(null)} />
       )}
-    </Widget>
+    </>
   );
 }

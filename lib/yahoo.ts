@@ -40,17 +40,64 @@ const TTL_NEWS = 5 * 60 * 1000;         // 5 minutes
 // Sentiment helper
 // ---------------------------------------------------------------------------
 
-const POSITIVE_KEYWORDS = ['bullish', 'surge', 'beat', 'rally', 'up', 'gain', 'rise', 'soar', 'record', 'profit'];
-const NEGATIVE_KEYWORDS = ['bearish', 'drop', 'miss', 'fall', 'down', 'crash', 'loss', 'decline', 'warn', 'cut'];
+const POSITIVE_WEIGHTED: [string, number][] = [
+  ['surge', 2], ['soar', 2], ['beat', 2], ['record', 2], ['rally', 2],
+  ['profit', 2], ['bullish', 2], ['upgrade', 2], ['outperform', 2], ['breakthrough', 2],
+  ['up', 1], ['gain', 1], ['rise', 1], ['strong', 1], ['growth', 1],
+  ['buy', 1], ['positive', 1], ['jump', 1], ['boost', 1], ['recover', 1],
+];
 
-function detectSentiment(title: string): NewsItem['sentiment'] {
+const NEGATIVE_WEIGHTED: [string, number][] = [
+  ['crash', 2], ['plunge', 2], ['miss', 2], ['loss', 2], ['bearish', 2],
+  ['downgrade', 2], ['underperform', 2], ['warn', 2], ['cut', 2], ['recall', 2],
+  ['down', 1], ['drop', 1], ['fall', 1], ['decline', 1], ['weak', 1],
+  ['sell', 1], ['negative', 1], ['slump', 1], ['risk', 1], ['concern', 1],
+];
+
+interface SentimentAnalysis {
+  sentiment: NewsItem['sentiment'];
+  suggestion: NewsItem['suggestion'];
+  confidence: NewsItem['confidence'];
+  matchedKeywords: string[];
+}
+
+function analyzeSentiment(title: string): SentimentAnalysis {
   const lower = title.toLowerCase();
-  const posMatches = POSITIVE_KEYWORDS.filter((w) => lower.includes(w)).length;
-  const negMatches = NEGATIVE_KEYWORDS.filter((w) => lower.includes(w)).length;
 
-  if (posMatches > negMatches) return 'POSITIVE';
-  if (negMatches > posMatches) return 'NEGATIVE';
-  return 'NEUTRAL';
+  let posScore = 0;
+  const posMatched: string[] = [];
+  for (const [word, weight] of POSITIVE_WEIGHTED) {
+    if (lower.includes(word)) { posScore += weight; posMatched.push(word); }
+  }
+
+  let negScore = 0;
+  const negMatched: string[] = [];
+  for (const [word, weight] of NEGATIVE_WEIGHTED) {
+    if (lower.includes(word)) { negScore += weight; negMatched.push(word); }
+  }
+
+  const gap = Math.abs(posScore - negScore);
+  const confidence: NewsItem['confidence'] = gap >= 3 ? 'HIGH' : gap >= 1 ? 'MEDIUM' : 'LOW';
+
+  let sentiment: NewsItem['sentiment'];
+  let suggestion: NewsItem['suggestion'];
+  if (posScore > negScore) {
+    sentiment = 'POSITIVE';
+    suggestion = 'BUY';
+  } else if (negScore > posScore) {
+    sentiment = 'NEGATIVE';
+    suggestion = 'SELL';
+  } else {
+    sentiment = 'NEUTRAL';
+    suggestion = 'HOLD';
+  }
+
+  return {
+    sentiment,
+    suggestion,
+    confidence,
+    matchedKeywords: posScore >= negScore ? posMatched : negMatched,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -261,8 +308,8 @@ export async function getNews(symbol: string): Promise<NewsItem[]> {
   const result = await yf.search(symbol, { quotesCount: 0, newsCount: 10 });
 
   const news: NewsItem[] = result.news.map((article) => {
-    const thumbnailUrl =
-      article.thumbnail?.resolutions?.[0]?.url ?? null;
+    const thumbnailUrl = article.thumbnail?.resolutions?.[0]?.url ?? null;
+    const analysis = analyzeSentiment(article.title);
 
     return {
       title: article.title,
@@ -272,7 +319,10 @@ export async function getNews(symbol: string): Promise<NewsItem[]> {
         ? article.providerPublishTime.getTime()
         : Number(article.providerPublishTime) * 1000,
       thumbnail: thumbnailUrl,
-      sentiment: detectSentiment(article.title),
+      sentiment: analysis.sentiment,
+      suggestion: analysis.suggestion,
+      confidence: analysis.confidence,
+      matchedKeywords: analysis.matchedKeywords,
     };
   });
 

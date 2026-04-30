@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useStore } from '@/store';
 
 interface TourStep {
-  target: string; // CSS selector
+  target: string;
   title: Record<'ro' | 'en', string>;
   body: Record<'ro' | 'en', string>;
   position: 'top' | 'bottom' | 'left' | 'right';
@@ -85,77 +85,82 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-interface PopupStyle {
-  top?: number;
-  bottom?: number;
-  left?: number;
-  right?: number;
-  maxWidth: number;
+const GAP = 12;
+const MARGIN = 8;
+const POPUP_W = 300;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
-function computePopupStyle(
+function computePosition(
   rect: DOMRect,
+  popupH: number,
   position: TourStep['position'],
-  viewportW: number,
-  viewportH: number,
-): PopupStyle {
-  const GAP = 12;
-  const W = Math.min(300, viewportW - 32);
+  vw: number,
+  vh: number,
+): React.CSSProperties {
+  const w = Math.min(POPUP_W, vw - MARGIN * 2);
 
-  switch (position) {
-    case 'right':
-      return {
-        top: Math.max(8, Math.min(rect.top + rect.height / 2 - 60, viewportH - 200)),
-        left: Math.min(rect.right + GAP, viewportW - W - 8),
-        maxWidth: W,
-      };
-    case 'left':
-      return {
-        top: Math.max(8, Math.min(rect.top + rect.height / 2 - 60, viewportH - 200)),
-        right: Math.max(8, viewportW - rect.left + GAP),
-        maxWidth: W,
-      };
-    case 'bottom':
-      return {
-        top: rect.bottom + GAP,
-        left: Math.max(8, Math.min(rect.left, viewportW - W - 8)),
-        maxWidth: W,
-      };
-    case 'top':
-    default:
-      return {
-        bottom: Math.max(8, viewportH - rect.top + GAP),
-        left: Math.max(8, Math.min(rect.left, viewportW - W - 8)),
-        maxWidth: W,
-      };
-  }
+  // Ideal positions for each side
+  const positions: Record<TourStep['position'], React.CSSProperties> = {
+    right: {
+      top: clamp(rect.top + rect.height / 2 - popupH / 2, MARGIN, vh - popupH - MARGIN),
+      left: clamp(rect.right + GAP, MARGIN, vw - w - MARGIN),
+      width: w,
+    },
+    left: {
+      top: clamp(rect.top + rect.height / 2 - popupH / 2, MARGIN, vh - popupH - MARGIN),
+      left: clamp(rect.left - GAP - w, MARGIN, vw - w - MARGIN),
+      width: w,
+    },
+    bottom: {
+      top: clamp(rect.bottom + GAP, MARGIN, vh - popupH - MARGIN),
+      left: clamp(rect.left + rect.width / 2 - w / 2, MARGIN, vw - w - MARGIN),
+      width: w,
+    },
+    top: {
+      top: clamp(rect.top - GAP - popupH, MARGIN, vh - popupH - MARGIN),
+      left: clamp(rect.left + rect.width / 2 - w / 2, MARGIN, vw - w - MARGIN),
+      width: w,
+    },
+  };
+
+  return positions[position];
 }
 
 export default function GuidedTour({ onFinish }: { onFinish: () => void }) {
   const locale = useStore((s) => s.locale);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [popupStyle, setPopupStyle] = useState<PopupStyle | null>(null);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+  const popupRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
   const locateStep = useCallback((stepIdx: number) => {
     const step = TOUR_STEPS[stepIdx];
     if (!step) return;
     const el = document.querySelector(step.target);
-    if (!el) {
-      setTargetRect(null);
-      setPopupStyle(null);
-      return;
-    }
+    if (!el) { setTargetRect(null); return; }
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     requestAnimationFrame(() => {
       const rect = el.getBoundingClientRect();
       setTargetRect(rect);
-      setPopupStyle(computePopupStyle(rect, step.position, window.innerWidth, window.innerHeight));
+      // Measure popup height after it renders; fall back to 200 for first paint
+      const popupH = popupRef.current?.offsetHeight ?? 200;
+      setPopupStyle(computePosition(rect, popupH, step.position, window.innerWidth, window.innerHeight));
     });
   }, []);
 
-  // Locate first step on mount via ref guard — avoids setState-in-effect lint
+  // Re-run positioning after popup renders so we use its real height
+  useEffect(() => {
+    if (!targetRect || !popupRef.current) return;
+    const step = TOUR_STEPS[currentStep];
+    if (!step) return;
+    const popupH = popupRef.current.offsetHeight;
+    setPopupStyle(computePosition(targetRect, popupH, step.position, window.innerWidth, window.innerHeight));
+  }, [currentStep, targetRect]);
+
   useEffect(() => {
     if (initializedRef.current) return;
     initializedRef.current = true;
@@ -190,7 +195,6 @@ export default function GuidedTour({ onFinish }: { onFinish: () => void }) {
               </mask>
             </defs>
             <rect width="100%" height="100%" fill="rgba(0,0,0,0.65)" mask="url(#spotlight)" />
-            {/* Highlight border */}
             <rect
               x={targetRect.left - 6}
               y={targetRect.top - 6}
@@ -206,12 +210,12 @@ export default function GuidedTour({ onFinish }: { onFinish: () => void }) {
       </div>
 
       {/* Popup */}
-      {popupStyle && current && (
+      {current && (
         <div
+          ref={popupRef}
           className="fixed z-[101] bg-panel border border-accent/40 rounded-xl shadow-2xl p-4 pointer-events-auto"
           style={popupStyle}
         >
-          {/* Step indicator */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] font-mono text-accent">
               {currentStep + 1} / {TOUR_STEPS.length}
@@ -234,7 +238,6 @@ export default function GuidedTour({ onFinish }: { onFinish: () => void }) {
             {current.body[locale]}
           </p>
 
-          {/* Progress dots */}
           <div className="flex items-center justify-between">
             <div className="flex gap-1">
               {TOUR_STEPS.map((_, i) => (

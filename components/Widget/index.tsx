@@ -33,38 +33,47 @@ export default function Widget({
       {...(tourAttr ? { 'data-tour': tourAttr } : {})}
     >
       {/* Header */}
-      <button
-        onClick={() => toggleCollapsed(id)}
-        className="w-full flex items-center gap-2 px-4 py-3 border-b border-border-subtle hover:bg-panel-hover transition-colors"
-      >
-        {/* Title + badge — allowed to grow but must leave room for chevron */}
-        <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-          <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase truncate shrink">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle">
+        {/* Clickable title area — collapses the widget */}
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={() => toggleCollapsed(id)}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleCollapsed(id)}
+          className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <h2 className="text-sm font-sans font-semibold text-text-primary tracking-wide uppercase truncate">
             {title}
           </h2>
           {badge && <span className="shrink-0 text-xs font-mono text-text-muted">{badge}</span>}
         </div>
-        {/* Right actions — always visible, never pushed off */}
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
+        {/* Right actions — titleRight may contain buttons, chevron is a separate button */}
+        <div className="flex items-center gap-2 shrink-0">
           {!widget.collapsed && titleRight}
-          <svg
-            width="11"
-            height="11"
-            viewBox="0 0 11 11"
-            fill="none"
-            aria-hidden
-            className={`text-text-dim transition-transform duration-200 shrink-0 ${widget.collapsed ? '' : 'rotate-180'}`}
+          <button
+            onClick={() => toggleCollapsed(id)}
+            className="p-1 rounded text-text-dim hover:text-text-primary transition-colors"
+            aria-label={widget.collapsed ? 'Expand' : 'Collapse'}
           >
-            <path
-              d="M2 3.5l3.5 3.5 3.5-3.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 11 11"
+              fill="none"
+              aria-hidden
+              className={`transition-transform duration-200 ${widget.collapsed ? '' : 'rotate-180'}`}
+            >
+              <path
+                d="M2 3.5l3.5 3.5 3.5-3.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </div>
-      </button>
+      </div>
 
       {/* Content — grows to fill the widget's min-height */}
       {!widget.collapsed && (

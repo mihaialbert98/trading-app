@@ -43,6 +43,9 @@ export interface NewsItem {
   publishedAt: number; // Unix ms
   thumbnail: string | null;
   sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+  suggestion: 'BUY' | 'SELL' | 'HOLD';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  matchedKeywords: string[];
 }
 
 export interface SearchResult {

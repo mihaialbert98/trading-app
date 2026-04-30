@@ -90,9 +90,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const buySignals = detectBuySignals(signalContext);
     const sellSignals = detectSellSignals(signalContext);
-    const signals: SignalEvent[] = [...buySignals, ...sellSignals].sort(
-      (a, b) => a.timestamp - b.timestamp,
-    );
+    const signals: SignalEvent[] = [...buySignals, ...sellSignals]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 20)
+      .sort((a, b) => a.timestamp - b.timestamp);
 
     return NextResponse.json({
       ohlcv,

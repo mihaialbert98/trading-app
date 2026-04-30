@@ -67,6 +67,22 @@ export const t: Record<string, Record<Locale, string>> = {
   },
   newsError: { ro: 'Eroare la încărcarea știrilor', en: 'Failed to load news' },
   noNews: { ro: 'Nu există știri recente', en: 'No recent news available' },
+  // NewsDrawer
+  aiAnalysis: { ro: 'Analiză AI', en: 'AI Analysis' },
+  aiSuggestion: { ro: 'Sugestie', en: 'Suggestion' },
+  aiConfidence: { ro: 'Încredere', en: 'Confidence' },
+  confidenceHigh: { ro: 'Ridicată', en: 'High' },
+  confidenceMedium: { ro: 'Medie', en: 'Medium' },
+  confidenceLow: { ro: 'Scăzută', en: 'Low' },
+  aiDisclaimer: {
+    ro: 'Această sugestie este generată automat pe baza titlului articolului și nu constituie consiliere financiară. Fă-ți propriile cercetări înainte de a lua orice decizie de investiție.',
+    en: 'This suggestion is generated automatically based on the article headline and does not constitute financial advice. Do your own research before making any investment decision.',
+  },
+  aiKeywordsFound: { ro: 'Cuvinte cheie detectate', en: 'Keywords detected' },
+  readFullArticle: { ro: 'Citește articolul complet', en: 'Read full article' },
+  suggestionBuy: { ro: '▲ CUMPĂRARE', en: '▲ BUY' },
+  suggestionSell: { ro: '▼ VÂNZARE', en: '▼ SELL' },
+  suggestionHold: { ro: '— NEUTRU', en: '— HOLD' },
   // Watchlist
   watchlistTitle: { ro: 'Listă de Urmărire', en: 'Watchlist' },
   watchlistEmpty: {

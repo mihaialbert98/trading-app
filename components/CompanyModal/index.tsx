@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import CompanyLogo from '@/components/CompanyLogo';
 import NewsCard from '@/components/NewsCard';
+import NewsDrawer from '@/components/NewsDrawer';
 import { useStore } from '@/store';
 import { useT } from '@/lib/i18n';
 import { useTranslatedText } from '@/hooks/useTranslation';
@@ -133,6 +134,7 @@ export default function CompanyModal({ symbol, name, onClose }: CompanyModalProp
   const tr = useT();
   const locale = useStore((s) => s.locale);
   const [panelVisible, setPanelVisible] = useState(false);
+  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
   const { data: fundamentals, isLoading: loadingFundamentals } = useSWR<CompanyInfo>(
     `/api/fundamentals?symbol=${encodeURIComponent(symbol)}`,
@@ -176,6 +178,10 @@ export default function CompanyModal({ symbol, name, onClose }: CompanyModalProp
   const isLoading = loadingFundamentals;
 
   return (
+    <>
+    {selectedNews && (
+      <NewsDrawer item={selectedNews} onClose={() => setSelectedNews(null)} />
+    )}
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
@@ -343,7 +349,7 @@ export default function CompanyModal({ symbol, name, onClose }: CompanyModalProp
                 ) : news && news.length > 0 ? (
                   <div className="space-y-2">
                     {news.map((item, idx) => (
-                      <NewsCard key={`${item.publishedAt}-${idx}`} item={item} />
+                      <NewsCard key={`${item.publishedAt}-${idx}`} item={item} onSelect={() => setSelectedNews(item)} />
                     ))}
                   </div>
                 ) : (
@@ -357,6 +363,7 @@ export default function CompanyModal({ symbol, name, onClose }: CompanyModalProp
         </div>
       </div>
     </div>
+    </>
   );
 }
 

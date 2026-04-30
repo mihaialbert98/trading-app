@@ -4,67 +4,39 @@ import { useT } from '@/lib/i18n';
 import type { NewsItem } from '@/types/stock';
 
 const SENTIMENT_STYLE = {
-  POSITIVE: {
-    bg: 'bg-gain/10',
-    text: 'text-gain',
-    border: 'border-gain/30',
-  },
-  NEGATIVE: {
-    bg: 'bg-loss/10',
-    text: 'text-loss',
-    border: 'border-loss/30',
-  },
-  NEUTRAL: {
-    bg: 'bg-border-subtle',
-    text: 'text-text-muted',
-    border: 'border-border-subtle',
-  },
+  POSITIVE: { bg: 'bg-gain/10', text: 'text-gain', border: 'border-gain/30' },
+  NEGATIVE: { bg: 'bg-loss/10', text: 'text-loss', border: 'border-loss/30' },
+  NEUTRAL:  { bg: 'bg-border-subtle', text: 'text-text-muted', border: 'border-border-subtle' },
 };
 
 function formatNewsDate(ts: number): string {
   return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
+    month: 'short', day: 'numeric', year: 'numeric',
   }).format(new Date(ts));
 }
 
 interface NewsCardProps {
   item: NewsItem;
+  onSelect: () => void;
 }
 
-export default function NewsCard({ item }: NewsCardProps) {
+export default function NewsCard({ item, onSelect }: NewsCardProps) {
   const tr = useT();
   const style = SENTIMENT_STYLE[item.sentiment];
-
   const sentimentLabel =
-    item.sentiment === 'POSITIVE'
-      ? tr('positive')
-      : item.sentiment === 'NEGATIVE'
-      ? tr('negative')
-      : tr('neutral');
+    item.sentiment === 'POSITIVE' ? tr('positive')
+    : item.sentiment === 'NEGATIVE' ? tr('negative')
+    : tr('neutral');
 
   return (
-    <a
-      href={item.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="
-        flex gap-3 p-3 rounded-lg
-        border border-border-subtle
-        bg-panel hover:bg-panel-hover
-        transition-colors group
-      "
+    <button
+      onClick={onSelect}
+      className="w-full text-left flex gap-3 p-3 rounded-lg border border-border-subtle bg-panel hover:bg-panel-hover transition-colors group"
     >
       {item.thumbnail && (
         <div className="shrink-0 w-16 h-16 rounded overflow-hidden bg-border-subtle">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.thumbnail}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <img src={item.thumbnail} alt="" className="w-full h-full object-cover" loading="lazy" />
         </div>
       )}
       <div className="flex-1 min-w-0 flex flex-col gap-1">
@@ -75,17 +47,14 @@ export default function NewsCard({ item }: NewsCardProps) {
           <span className="text-xs font-sans text-text-muted">{item.source}</span>
           <span className="text-text-dim">·</span>
           <span className="text-xs font-mono text-text-dim">{formatNewsDate(item.publishedAt)}</span>
-          <span
-            className={`
-              ml-auto text-[10px] font-mono font-semibold px-1.5 py-0.5
-              rounded border tracking-wide
-              ${style.bg} ${style.text} ${style.border}
-            `}
-          >
+          <span className={`ml-auto text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded border tracking-wide ${style.bg} ${style.text} ${style.border}`}>
             {sentimentLabel}
           </span>
         </div>
       </div>
-    </a>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="shrink-0 self-start mt-0.5 text-text-dim group-hover:text-accent transition-colors">
+        <path d="M2 10l8-8M4 2h6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
   );
 }
