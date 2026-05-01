@@ -3,7 +3,17 @@
 import dynamic from 'next/dynamic';
 import { useStore } from '@/store';
 import { useStockData, useQuote } from '@/hooks/useStockData';
-import { useIndicators } from '@/hooks/useIndicators';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useT } from '@/lib/i18n';
+import type { OHLCV } from '@/types/stock';
+import { calculateRSI } from '@/lib/indicators/rsi';
+import { calculateMACD } from '@/lib/indicators/macd';
+import { calculateBollinger } from '@/lib/indicators/bollinger';
+import { calculateEMA } from '@/lib/indicators/ema';
+import { calculateSMA } from '@/lib/indicators/sma';
+import { calculateStochastic } from '@/lib/indicators/stochastic';
+import { calculateATR } from '@/lib/indicators/atr';
+import { calculateVolume } from '@/lib/indicators/volume';
 
 const ChartCore = dynamic(() => import('./ChartCore'), {
   ssr: false,
@@ -11,6 +21,7 @@ const ChartCore = dynamic(() => import('./ChartCore'), {
 });
 
 function ChartSkeleton() {
+  const tr = useT();
   return (
     <div className="w-full h-full flex items-center justify-center bg-navy">
       <div className="flex flex-col items-center gap-3">
@@ -23,13 +34,14 @@ function ChartSkeleton() {
             />
           ))}
         </div>
-        <span className="text-text-dim text-xs font-mono">Se încarcă graficul…</span>
+        <span className="text-text-dim text-xs font-mono">{tr('loadingChart')}</span>
       </div>
     </div>
   );
 }
 
 function EmptyState() {
+  const tr = useT();
   return (
     <div className="w-full h-full flex items-center justify-center bg-navy">
       <div className="flex flex-col items-center gap-4 max-w-xs text-center">
@@ -44,9 +56,9 @@ function EmptyState() {
           />
         </svg>
         <div>
-          <p className="text-text-muted font-sans font-semibold text-sm">Nicio acțiune selectată</p>
+          <p className="text-text-muted font-sans font-semibold text-sm">{tr('noStockSelected')}</p>
           <p className="text-text-dim font-sans text-xs mt-1 leading-relaxed">
-            Caută un simbol bursier în bara laterală pentru a încărca graficul
+            {tr('searchSidebarHint')}
           </p>
         </div>
       </div>
@@ -54,7 +66,8 @@ function EmptyState() {
   );
 }
 
-function ErrorState({ message }: { message: string }) {
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const tr = useT();
   return (
     <div className="w-full h-full flex items-center justify-center bg-navy">
       <div className="flex flex-col items-center gap-3 max-w-xs text-center">
@@ -63,9 +76,15 @@ function ErrorState({ message }: { message: string }) {
           <path d="M18 11v9M18 24v1.5" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <div>
-          <p className="text-loss font-sans text-sm font-semibold">Eroare la încărcarea graficului</p>
+          <p className="text-loss font-sans text-sm font-semibold">{tr('chartError')}</p>
           <p className="text-text-dim font-sans text-xs mt-1">{message}</p>
         </div>
+        <button
+          onClick={onRetry}
+          className="mt-1 px-3 py-1.5 text-xs font-sans border border-border-subtle text-text-muted rounded hover:text-text-primary hover:border-accent transition-colors"
+        >
+          {tr('locale') === 'ro' ? 'Încearcă din nou' : 'Try again'}
+        </button>
       </div>
     </div>
   );
@@ -174,14 +193,116 @@ function QuoteBar() {
   );
 }
 
+// How far back one scroll-back step reaches (in days per interval type)
+const SCROLL_BACK_DAYS: Record<string, number> = {
+  '1h': 30,
+  '1d': 365,
+  '1wk': 365 * 3,
+  '1mo': 365 * 10,
+};
+
 export default function StockChart() {
+  const tr = useT();
   const { selectedSymbol, activeIndicators, interval, timeframe, selectedSignalTimestamp } = useStore();
-  const { data: ohlcv, signals, isLoading, error } = useStockData(
+  const { data: freshOhlcv, indicators: rawIndicators, signals, isLoading, error, mutate, fetchHistoryChunk } = useStockData(
     selectedSymbol,
     interval,
     timeframe
   );
-  const { indicators } = useIndicators(selectedSymbol);
+
+  const { emaPeriods, smaPeriods } = useStore();
+
+  // Accumulated historical data (prepended chunks from scroll-back)
+  const [prependedOhlcv, setPrependedOhlcv] = useState<OHLCV[]>([]);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // Prevent re-fetching the same window
+  const oldestFetchedRef = useRef<number | null>(null);
+
+  // Reset prepended data whenever symbol/timeframe/interval changes
+  const currentKey = `${selectedSymbol}:${interval}:${timeframe}`;
+  const prevKeyRef = useRef(currentKey);
+  useEffect(() => {
+    if (currentKey !== prevKeyRef.current) {
+      prevKeyRef.current = currentKey;
+      setPrependedOhlcv([]);
+      setIsLoadingMore(false);
+      oldestFetchedRef.current = null;
+    }
+  }, [currentKey]);
+
+  // Merge prepended + fresh, deduplicating by timestamp.
+  // If the key changed but the effect hasn't fired yet, skip merging old prepended data.
+  const ohlcv: OHLCV[] | null = (() => {
+    if (!freshOhlcv) return null;
+    if (prependedOhlcv.length === 0 || currentKey !== prevKeyRef.current) return freshOhlcv;
+    const seen = new Set(freshOhlcv.map((d) => d.timestamp));
+    const unique = prependedOhlcv.filter((d) => !seen.has(d.timestamp));
+    return [...unique, ...freshOhlcv].sort((a, b) => a.timestamp - b.timestamp);
+  })();
+
+  // When prepended history exists, recompute all indicators over the full merged ohlcv
+  // so the sub-panels cover the scrolled-back range too.
+  // Otherwise use the server-computed values (no client work needed).
+  const indicators = useMemo(() => {
+    if (!rawIndicators || !ohlcv) return {};
+
+    const src = ohlcv;
+    const useClientComputed = prependedOhlcv.length > 0;
+
+    const rsiValues = useClientComputed ? calculateRSI(src, 14) : (rawIndicators.rsi?.values ?? []);
+    const macdResult = useClientComputed ? calculateMACD(src, 12, 26, 9) : rawIndicators.macd;
+    const bollingerResult = useClientComputed ? calculateBollinger(src, 20, 2) : rawIndicators.bollinger;
+    const atrResult = useClientComputed ? calculateATR(src, 14) : rawIndicators.atr;
+    const volumeResult = useClientComputed ? calculateVolume(src, 20) : rawIndicators.volume;
+    const stochasticResult = useClientComputed ? calculateStochastic(src, 14, 3, 3) : rawIndicators.stochastic;
+
+    const out: Record<string, unknown> = {};
+    if (activeIndicators.includes('RSI')) out.rsi = { values: rsiValues };
+    if (activeIndicators.includes('MACD')) out.macd = macdResult;
+    if (activeIndicators.includes('BOLLINGER')) out.bollinger = bollingerResult;
+    if (activeIndicators.includes('STOCHASTIC')) out.stochastic = stochasticResult;
+    if (activeIndicators.includes('ATR')) out.atr = atrResult;
+    if (activeIndicators.includes('VOLUME')) out.volume = volumeResult;
+    if (activeIndicators.includes('EMA')) {
+      out.ema = emaPeriods.map((p) => ({
+        period: p,
+        values: useClientComputed ? calculateEMA(src, p) : (rawIndicators.ema?.[p] ?? []),
+      }));
+    }
+    if (activeIndicators.includes('SMA')) {
+      out.sma = smaPeriods.map((p) => ({
+        period: p,
+        values: useClientComputed ? calculateSMA(src, p) : (rawIndicators.sma?.[p] ?? []),
+      }));
+    }
+    return out;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawIndicators, ohlcv, prependedOhlcv.length, activeIndicators, emaPeriods, smaPeriods]);
+
+  const handleScrollBackRequest = useCallback(async (oldestTimestamp: number) => {
+    if (isLoadingMore || !selectedSymbol) return;
+    // Don't re-fetch if we already fetched this far back
+    if (oldestFetchedRef.current !== null && oldestTimestamp >= oldestFetchedRef.current) return;
+
+    const days = SCROLL_BACK_DAYS[interval] ?? 365;
+    const period1 = new Date(oldestTimestamp - days * 24 * 60 * 60 * 1000);
+
+    // Don't go before ~1990 (no data that far back anyway)
+    if (period1.getFullYear() < 1990) return;
+
+    setIsLoadingMore(true);
+    oldestFetchedRef.current = oldestTimestamp;
+
+    const chunk = await fetchHistoryChunk(period1);
+    if (chunk && chunk.length > 0) {
+      setPrependedOhlcv((prev) => {
+        const seen = new Set(prev.map((d) => d.timestamp));
+        const newItems = chunk.filter((d) => !seen.has(d.timestamp));
+        return [...newItems, ...prev].sort((a, b) => a.timestamp - b.timestamp);
+      });
+    }
+    setIsLoadingMore(false);
+  }, [isLoadingMore, selectedSymbol, interval, fetchHistoryChunk]);
 
   return (
     <div className="flex flex-col h-full border border-border-subtle rounded-lg overflow-hidden bg-navy">
@@ -193,22 +314,25 @@ export default function StockChart() {
         {selectedSymbol && isLoading && <ChartSkeleton />}
 
         {selectedSymbol && !isLoading && error && (
-          <ErrorState message={error.message} />
+          <ErrorState message={error.message} onRetry={() => mutate()} />
         )}
 
         {selectedSymbol && !isLoading && !error && ohlcv && ohlcv.length > 0 && (
           <ChartCore
             ohlcv={ohlcv}
+            viewportOhlcv={freshOhlcv ?? []}
             signals={signals}
             indicators={indicators}
             activeIndicators={activeIndicators}
             selectedSignalTimestamp={selectedSignalTimestamp}
+            onScrollBackRequest={handleScrollBackRequest}
+            isLoadingMore={isLoadingMore}
           />
         )}
 
         {selectedSymbol && !isLoading && !error && (!ohlcv || ohlcv.length === 0) && (
           <div className="w-full h-full flex items-center justify-center bg-navy">
-            <p className="text-text-muted font-sans text-sm">Nu există date disponibile</p>
+            <p className="text-text-muted font-sans text-sm">{tr('noChartData')}</p>
           </div>
         )}
       </div>

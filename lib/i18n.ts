@@ -137,6 +137,12 @@ export const signalDescriptions: Record<string, Record<Locale, string>> = {
   S2: { ro: 'Avertisment Timpuriu de Vânzare', en: 'Early SELL Warning' },
   S3: { ro: 'Vânzare pe Trend', en: 'Trend SELL' },
   S4: { ro: 'Vânzare — MACD trece sub zero', en: 'SELL — MACD zero-line crossover' },
+  // DonationBanner
+  donationMessage: {
+    ro: 'StockScope este gratuit și rămâne gratuit. Dacă îți este de folos, poți cumpăra o cafea. ☕',
+    en: 'StockScope is free and will stay free. If it helps you, consider buying me a coffee. ☕',
+  },
+  donationCta: { ro: 'Suportă proiectul', en: 'Support the project' },
 };
 
 // Hook to get translator

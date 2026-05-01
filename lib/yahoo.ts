@@ -202,12 +202,16 @@ export async function getHistory(
   symbol: string,
   interval: '1h' | '1d' | '1wk' | '1mo',
   range: Range,
+  period1Override?: Date,
 ): Promise<OHLCV[]> {
-  const cacheKey = `history:${symbol.toUpperCase()}:${interval}:${range}`;
+  const cacheKey = period1Override
+    ? `history:${symbol.toUpperCase()}:${interval}:custom:${Math.floor(period1Override.getTime() / 86400000)}`
+    : `history:${symbol.toUpperCase()}:${interval}:${range}`;
   const cached = getCached<OHLCV[]>(cacheKey);
   if (cached) return cached;
 
-  const { period1, period2 } = rangeToPeriod(range);
+  const { period1: defaultPeriod1, period2 } = rangeToPeriod(range);
+  const period1 = period1Override ?? defaultPeriod1;
 
   let ohlcv: OHLCV[];
 

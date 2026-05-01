@@ -28,6 +28,8 @@ const querySchema = z.object({
   range: z
     .enum(['1d', '5d', '1mo', '3mo', '6mo', '1y', '5y'])
     .default('1y'),
+  // Optional: ISO date string for scroll-back fetches (load data older than current window)
+  period1: z.string().optional(),
 });
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -36,6 +38,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     symbol: searchParams.get('symbol') ?? '',
     interval: searchParams.get('interval') ?? '1d',
     range: searchParams.get('range') ?? '1y',
+    period1: searchParams.get('period1') ?? undefined,
   };
 
   const parsed = querySchema.safeParse(rawParams);
@@ -46,14 +49,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { symbol, interval, range } = parsed.data;
+  const { symbol, interval, range, period1: period1Str } = parsed.data;
+
+  // Parse optional period1 override for scroll-back fetches
+  let period1Override: Date | undefined;
+  if (period1Str) {
+    const d = new Date(period1Str);
+    if (!isNaN(d.getTime())) period1Override = d;
+  }
 
   try {
-    const ohlcv = await getHistory(symbol, interval, range);
+    const ohlcv = await getHistory(symbol, interval, range, period1Override);
 
     if (ohlcv.length === 0) {
       return NextResponse.json(
-        { error: 'No historical data available for this symbol' },
+        { error: 'No historical data available for this symbol', code: 'NO_DATA' },
         { status: 404 },
       );
     }
@@ -98,7 +108,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       ohlcv,
       indicators: {
-        rsi,
+        rsi: { values: rsi }, // wrap raw array into RSIResult shape
         macd,
         bollinger,
         ema,
@@ -111,9 +121,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
   } catch (err) {
     console.error('[api/history] Error fetching history:', err);
+    const message = err instanceof Error ? err.message : '';
+    const isNotFound = message.includes('No fundamentals data') || message.includes('HTTPError') || message.includes('Not Found');
     return NextResponse.json(
-      { error: 'Failed to fetch historical data' },
-      { status: 500 },
+      {
+        error: isNotFound
+          ? 'Symbol not found or no data available'
+          : 'Failed to fetch historical data — please try again',
+        code: isNotFound ? 'NOT_FOUND' : 'SERVER_ERROR',
+      },
+      { status: isNotFound ? 404 : 500 },
     );
   }
 }

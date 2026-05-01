@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import { useCallback } from 'react';
 import type { OHLCV, Quote } from '@/types/stock';
 import type { SignalEvent } from '@/types/signals';
 import type {
@@ -27,11 +28,20 @@ export interface HistoryResponse {
   signals: SignalEvent[];
 }
 
-const fetcher = <T>(url: string): Promise<T> =>
-  fetch(url).then((res) => {
-    if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-    return res.json() as Promise<T>;
-  });
+async function fetcher<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  if (!res.ok) {
+    let message = `Request failed (${res.status})`;
+    try {
+      const body = (await res.json()) as { error?: string; code?: string };
+      if (body.error) message = body.error;
+    } catch { /* ignore */ }
+    const err = new Error(message) as Error & { status: number };
+    err.status = res.status;
+    throw err;
+  }
+  return res.json() as Promise<T>;
+}
 
 function isMarketHours(): boolean {
   const now = new Date();
@@ -65,15 +75,39 @@ export function useStockData(
     revalidateOnFocus: false,
     refreshInterval: isMarketHours() ? 30000 : 0,
     dedupingInterval: 25000,
+    keepPreviousData: true,
+    onErrorRetry: (err, _key, _config, revalidate, { retryCount }) => {
+      // Don't retry on 404 — symbol not found is permanent
+      if ((err as { status?: number }).status === 404) return;
+      // Max 3 retries with exponential backoff
+      if (retryCount >= 3) return;
+      setTimeout(() => revalidate({ retryCount }), Math.min(1000 * 2 ** retryCount, 15000));
+    },
   });
+
+  // Fetch additional historical candles for a custom date window (scroll-back)
+  const fetchHistoryChunk = useCallback(
+    async (period1: Date): Promise<OHLCV[] | null> => {
+      if (!symbol) return null;
+      try {
+        const url = `/api/history?symbol=${encodeURIComponent(symbol)}&interval=${interval}&range=${timeframe}&period1=${period1.toISOString()}`;
+        const result = await fetcher<HistoryResponse>(url);
+        return result.ohlcv;
+      } catch {
+        return null;
+      }
+    },
+    [symbol, interval, timeframe]
+  );
 
   return {
     data: data?.ohlcv ?? null,
     indicators: data?.indicators ?? null,
     signals: data?.signals ?? [],
     isLoading,
-    error: error as Error | null,
+    error: error as (Error & { status?: number }) | null,
     mutate,
+    fetchHistoryChunk,
   };
 }
 
@@ -85,6 +119,10 @@ export function useQuote(symbol: string | null) {
       revalidateOnFocus: false,
       refreshInterval: isMarketHours() ? 30000 : 0,
       dedupingInterval: 25000,
+      onErrorRetry: (_err, _key, _config, revalidate, { retryCount }) => {
+        if (retryCount >= 3) return;
+        setTimeout(() => revalidate({ retryCount }), Math.min(1000 * 2 ** retryCount, 15000));
+      },
     }
   );
 

@@ -9,6 +9,7 @@ import IndicatorToggle from '@/components/IndicatorToggle';
 import IndicatorPanel from '@/components/IndicatorPanel';
 import GuidedTour from '@/components/GuidedTour';
 import RightPanel from '@/components/RightPanel';
+import DonationBanner from '@/components/DonationBanner';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { useT } from '@/lib/i18n';
@@ -230,6 +231,7 @@ export default function Home() {
         <RightPanel />
       </div>
 
+      <DonationBanner />
       <footer className="px-4 py-2 border-t border-border-subtle text-center bg-panel">
         <p className="text-[11px] font-sans text-text-dim">
           {tr('disclaimer')}
