@@ -6,11 +6,20 @@ import type { CustomRule } from '@/types/customSignals';
 export type { IndicatorType };
 
 export type Timeframe = '1d' | '5d' | '1mo' | '3mo' | '6mo' | '1y' | '5y';
-export type Interval = '1h' | '1d' | '1wk' | '1mo';
+export type Interval = '1h' | '4h' | '1d' | '1wk' | '1mo';
 
 export interface WatchlistItem {
   symbol: string;
   name: string;
+}
+
+export interface AppNotification {
+  id: string;
+  symbol: string;
+  title: string;
+  body: string;
+  timestamp: number;
+  read: boolean;
 }
 
 export type WidgetId = 'signals' | 'custom-signals' | 'fundamentals' | 'news';
@@ -30,10 +39,12 @@ interface StoreState {
   smaPeriods: number[];
   timeframe: Timeframe;
   interval: Interval;
+  viewDays: number | null;
   theme: 'dark' | 'light';
   locale: 'ro' | 'en';
   customRules: CustomRule[];
   widgets: WidgetConfig[];
+  notifications: AppNotification[];
   // actions
   setSelectedSymbol: (symbol: string, name: string) => void;
   addCustomRule: (rule: CustomRule) => void;
@@ -45,11 +56,14 @@ interface StoreState {
   toggleIndicator: (indicator: IndicatorType) => void;
   selectedSignalTimestamp: number | null;
   setSelectedSignalTimestamp: (ts: number | null) => void;
-  setTimeframe: (tf: Timeframe, interval: Interval) => void;
+  setTimeframe: (tf: Timeframe, interval: Interval, viewDays?: number | null) => void;
   toggleTheme: () => void;
   setLocale: (locale: 'ro' | 'en') => void;
   toggleWidgetVisible: (id: WidgetId) => void;
   toggleWidgetCollapsed: (id: WidgetId) => void;
+  addNotification: (n: Omit<AppNotification, 'id' | 'read' | 'timestamp'>) => void;
+  markAllNotificationsRead: () => void;
+  clearNotifications: () => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -64,9 +78,11 @@ export const useStore = create<StoreState>()(
       smaPeriods: [50, 200],
       timeframe: '3mo',
       interval: '1d',
+      viewDays: null,
       theme: 'dark',
       locale: 'ro',
       customRules: [],
+      notifications: [],
       widgets: [
         { id: 'signals', visible: true, collapsed: false },
         { id: 'custom-signals', visible: true, collapsed: false },
@@ -100,8 +116,8 @@ export const useStore = create<StoreState>()(
       setSelectedSignalTimestamp: (ts: number | null) =>
         set({ selectedSignalTimestamp: ts }),
 
-      setTimeframe: (tf: Timeframe, interval: Interval) =>
-        set({ timeframe: tf, interval }),
+      setTimeframe: (tf: Timeframe, interval: Interval, viewDays?: number | null) =>
+        set({ timeframe: tf, interval, viewDays: viewDays ?? null }),
 
       toggleTheme: () =>
         set({ theme: get().theme === 'dark' ? 'light' : 'dark' }),
@@ -121,6 +137,19 @@ export const useStore = create<StoreState>()(
             w.id === id ? { ...w, collapsed: !w.collapsed } : w,
           ),
         }),
+
+      addNotification: (n) =>
+        set({
+          notifications: [
+            { ...n, id: `${n.symbol}:${Date.now()}`, read: false, timestamp: Date.now() },
+            ...get().notifications,
+          ].slice(0, 50), // keep max 50
+        }),
+
+      markAllNotificationsRead: () =>
+        set({ notifications: get().notifications.map((n) => ({ ...n, read: true })) }),
+
+      clearNotifications: () => set({ notifications: [] }),
 
       addCustomRule: (rule: CustomRule) =>
         set({ customRules: [...get().customRules, rule] }),
@@ -150,6 +179,7 @@ export const useStore = create<StoreState>()(
         smaPeriods: state.smaPeriods,
         timeframe: state.timeframe,
         interval: state.interval,
+        viewDays: state.viewDays,
         customRules: state.customRules,
         widgets: state.widgets,
       }),

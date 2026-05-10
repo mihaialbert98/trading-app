@@ -13,6 +13,8 @@ import DonationBanner from '@/components/DonationBanner';
 import Link from 'next/link';
 import { useStore } from '@/store';
 import { useT } from '@/lib/i18n';
+import { useSignalMonitor } from '@/hooks/useSignalMonitor';
+import NotificationBell from '@/components/NotificationBell';
 
 function ThemeToggle() {
   const { theme, toggleTheme } = useStore();
@@ -86,6 +88,7 @@ function Sidebar() {
           </span>
         </div>
         <div className="flex items-center gap-1">
+          <NotificationBell />
           <LanguageToggle />
           <ThemeToggle />
         </div>
@@ -169,6 +172,7 @@ export default function Home() {
   const [tourActive, setTourActive] = useState(false);
   const tr = useT();
   const locale = useStore((s) => s.locale);
+  useSignalMonitor();
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-navy">
@@ -238,6 +242,10 @@ export default function Home() {
           {' · '}
           <Link href="/help" className="text-accent hover:underline">
             {tr('helpLink')}
+          </Link>
+          {' · '}
+          <Link href="/changelog" className="text-accent hover:underline">
+            {locale === 'ro' ? 'Changelog' : 'Changelog'}
           </Link>
           {' · '}
           <button

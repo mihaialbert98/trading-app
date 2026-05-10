@@ -654,9 +654,14 @@ export default function HelpPage() {
               ? 'Doar în scop informativ. Nu constituie consiliere financiară. Datele de piață au o întârziere de 15 minute.'
               : 'For informational purposes only. Not financial advice. Market data delayed 15 minutes.'}
           </p>
-          <Link href="/" className="text-xs font-sans text-accent hover:underline">
-            {UI.back[L]}
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/changelog" className="text-xs font-sans text-text-muted hover:text-accent transition-colors">
+              {L === 'ro' ? 'Changelog' : 'Changelog'}
+            </Link>
+            <Link href="/" className="text-xs font-sans text-accent hover:underline">
+              {UI.back[L]}
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

@@ -121,6 +121,8 @@ export default function ChartCore({
   const seriesMapRef = useRef<Map<string, ISeriesApi<'Line' | 'Histogram' | 'Candlestick'>>>(new Map());
   const allChartsRef = useRef<IChartApi[]>([]);
   const subChartsRef = useRef<IChartApi[]>([]);
+  // Maps each chart to its first series — used to anchor setCrosshairPosition calls
+  const chartAnchorSeriesRef = useRef<Map<IChartApi, ISeriesApi<'Line' | 'Histogram' | 'Candlestick'>>>(new Map());
 
   // Whether we've triggered a scroll-back fetch already (prevents duplicate calls)
   const scrollBackFetchingRef = useRef(false);
@@ -157,6 +159,7 @@ export default function ChartCore({
     }
     containerRef.current.innerHTML = '';
     seriesMapRef.current.clear();
+    chartAnchorSeriesRef.current.clear();
     allChartsRef.current = [];
     subChartsRef.current = [];
     scrollBackFetchingRef.current = false;
@@ -239,6 +242,7 @@ export default function ChartCore({
     candleSeries.setData(candleData);
     candleSeriesRef.current = candleSeries;
     seriesMapRef.current.set('candle', candleSeries);
+    chartAnchorSeriesRef.current.set(mainChart, candleSeries);
 
     // Bollinger Bands overlay
     if (activeIndicators.includes('BOLLINGER')) {
@@ -363,15 +367,15 @@ export default function ChartCore({
         s.setData(ohlcv.map((d) => ({ time: toTime(d.timestamp), value })));
       }
 
-      return { chart, addRefLine };
+      return { chart, addRefLine, registerAnchor: (s: ISeriesApi<'Line' | 'Histogram' | 'Candlestick'>) => { chartAnchorSeriesRef.current.set(chart, s); } };
     }
 
     // RSI — always create series when RSI is active so Phase 2 can populate it
     if (activeIndicators.includes('RSI')) {
-      const { chart, addRefLine } = createSubPanel('RSI(14)');
-      addRefLine(70, '#EF444466');
-      addRefLine(50, '#64748b66');
-      addRefLine(30, '#22C55E66');
+      const { chart, addRefLine, registerAnchor } = createSubPanel('RSI(14)');
+      addRefLine(70, '#EF4444aa');
+      addRefLine(50, '#94a3b8aa');
+      addRefLine(30, '#22C55Eaa');
       const s = chart.addSeries(LineSeries, {
         color: RSI_COLOR,
         lineWidth: 2 as const,
@@ -382,11 +386,12 @@ export default function ChartCore({
         s.setData(toLineData(ohlcv, currentIndicators.rsi.values));
       }
       seriesMapRef.current.set('rsi', s);
+      registerAnchor(s);
     }
 
     // MACD — always create series when MACD is active so Phase 2 can populate it
     if (activeIndicators.includes('MACD')) {
-      const { chart, addRefLine } = createSubPanel('MACD(12,26,9)');
+      const { chart, addRefLine, registerAnchor } = createSubPanel('MACD(12,26,9)');
       addRefLine(0, '#64748b88');
 
       const histSeries = chart.addSeries(HistogramSeries, {
@@ -423,11 +428,12 @@ export default function ChartCore({
       seriesMapRef.current.set('macd_hist', histSeries);
       seriesMapRef.current.set('macd_line', macdLine);
       seriesMapRef.current.set('macd_signal', signalLine);
+      registerAnchor(macdLine);
     }
 
     // Volume — always create series when VOLUME is active so Phase 2 can populate it
     if (activeIndicators.includes('VOLUME')) {
-      const { chart } = createSubPanel('Volume');
+      const { chart, registerAnchor } = createSubPanel('Volume');
       const volSeries = chart.addSeries(HistogramSeries, {
         priceLineVisible: false,
         lastValueVisible: false,
@@ -454,11 +460,12 @@ export default function ChartCore({
         }
       }
       seriesMapRef.current.set('vol', volSeries);
+      registerAnchor(volSeries);
     }
 
     // Stochastic — always create series when STOCHASTIC is active so Phase 2 can populate it
     if (activeIndicators.includes('STOCHASTIC')) {
-      const { chart, addRefLine } = createSubPanel('Stoch(%K,%D)');
+      const { chart, addRefLine, registerAnchor } = createSubPanel('Stoch(%K,%D)');
       addRefLine(80, '#EF444466');
       addRefLine(20, '#22C55E66');
       const kSeries = chart.addSeries(LineSeries, {
@@ -480,11 +487,12 @@ export default function ChartCore({
       }
       seriesMapRef.current.set('stoch_k', kSeries);
       seriesMapRef.current.set('stoch_d', dSeries);
+      registerAnchor(kSeries);
     }
 
     // ATR — always create series when ATR is active so Phase 2 can populate it
     if (activeIndicators.includes('ATR')) {
-      const { chart } = createSubPanel('ATR(14)');
+      const { chart, registerAnchor } = createSubPanel('ATR(14)'); // eslint-disable-line @typescript-eslint/no-unused-vars
       const s = chart.addSeries(LineSeries, {
         color: ATR_COLOR,
         lineWidth: 2 as const,
@@ -495,6 +503,7 @@ export default function ChartCore({
         s.setData(toLineData(ohlcv, currentIndicators.atr.values));
       }
       seriesMapRef.current.set('atr', s);
+      registerAnchor(s);
     }
 
     // Sync time scales + scroll-back detection
@@ -521,6 +530,21 @@ export default function ChartCore({
           scrollBackFetchingRef.current = true;
           onScrollBackRequestRef.current(ohlcv[0].timestamp);
         }
+      });
+    });
+
+    // Sync crosshair position across all charts
+    allChartsRef.current.forEach((sourceChart) => {
+      sourceChart.subscribeCrosshairMove((param) => {
+        allChartsRef.current.forEach((other) => {
+          if (other === sourceChart) return;
+          if (!param.time) {
+            other.clearCrosshairPosition();
+          } else {
+            const anchor = chartAnchorSeriesRef.current.get(other);
+            if (anchor) other.setCrosshairPosition(NaN, param.time, anchor);
+          }
+        });
       });
     });
 
@@ -565,6 +589,7 @@ export default function ChartCore({
       allChartsRef.current = [];
       subChartsRef.current = [];
       seriesMapRef.current.clear();
+      chartAnchorSeriesRef.current.clear();
     };
   }, [ohlcv, signals, activeIndicators]); // ← indicators intentionally excluded
 

@@ -10,6 +10,7 @@ import type {
   VolumeResult,
   StochasticResult,
 } from '@/types/indicators';
+import { isMarketHours } from '@/lib/market';
 
 export interface IndicatorsResponse {
   rsi: RSIResult;
@@ -43,32 +44,16 @@ async function fetcher<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-function isMarketHours(): boolean {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  if (dayOfWeek === 0 || dayOfWeek === 6) return false;
-
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  const year = now.getFullYear();
-  const marchDate = new Date(year, 2, 1);
-  marchDate.setDate(marchDate.getDate() + ((7 - marchDate.getDay()) % 7) + 7);
-  const novDate = new Date(year, 10, 1);
-  novDate.setDate(novDate.getDate() + ((7 - novDate.getDay()) % 7));
-  const isDST = now >= marchDate && now < novDate;
-  const etOffset = isDST ? -4 : -5;
-  const etDate = new Date(utcMs + etOffset * 3600000);
-
-  const etTime = etDate.getHours() * 60 + etDate.getMinutes();
-  return etTime >= 9 * 60 + 30 && etTime < 16 * 60;
-}
 
 export function useStockData(
   symbol: string | null,
   interval: string,
   timeframe: string
 ) {
+  // '4h' is a client-side aggregation of 1h candles — the API only knows '1h'
+  const apiInterval = interval === '4h' ? '1h' : interval;
   const key = symbol
-    ? `/api/history?symbol=${encodeURIComponent(symbol)}&interval=${interval}&range=${timeframe}`
+    ? `/api/history?symbol=${encodeURIComponent(symbol)}&interval=${apiInterval}&range=${timeframe}`
     : null;
 
   const { data, isLoading, error, mutate } = useSWR<HistoryResponse>(key, fetcher, {
@@ -90,7 +75,7 @@ export function useStockData(
     async (period1: Date): Promise<OHLCV[] | null> => {
       if (!symbol) return null;
       try {
-        const url = `/api/history?symbol=${encodeURIComponent(symbol)}&interval=${interval}&range=${timeframe}&period1=${period1.toISOString()}`;
+        const url = `/api/history?symbol=${encodeURIComponent(symbol)}&interval=${apiInterval}&range=${timeframe}&period1=${period1.toISOString()}`;
         const result = await fetcher<HistoryResponse>(url);
         return result.ohlcv;
       } catch {

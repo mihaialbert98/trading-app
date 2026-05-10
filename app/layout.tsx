@@ -18,7 +18,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="h-full overflow-hidden antialiased">{children}</body>
+      <body className="h-full antialiased">{children}</body>
     </html>
   );
 }

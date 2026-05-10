@@ -196,14 +196,34 @@ function QuoteBar() {
 // How far back one scroll-back step reaches (in days per interval type)
 const SCROLL_BACK_DAYS: Record<string, number> = {
   '1h': 30,
+  '4h': 30,
   '1d': 365,
   '1wk': 365 * 3,
   '1mo': 365 * 10,
 };
 
+function aggregateToFourHour(candles: OHLCV[]): OHLCV[] {
+  const buckets = new Map<number, OHLCV[]>();
+  for (const c of candles) {
+    const key = Math.floor(c.timestamp / (4 * 3_600_000));
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(c);
+  }
+  return [...buckets.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([key, g]) => ({
+      timestamp: key * 4 * 3_600_000,
+      open: g[0].open,
+      high: Math.max(...g.map((c) => c.high)),
+      low: Math.min(...g.map((c) => c.low)),
+      close: g[g.length - 1].close,
+      volume: g.reduce((s, c) => s + c.volume, 0),
+    }));
+}
+
 export default function StockChart() {
   const tr = useT();
-  const { selectedSymbol, activeIndicators, interval, timeframe, selectedSignalTimestamp } = useStore();
+  const { selectedSymbol, activeIndicators, interval, timeframe, viewDays, selectedSignalTimestamp } = useStore();
   const { data: freshOhlcv, indicators: rawIndicators, signals, isLoading, error, mutate, fetchHistoryChunk } = useStockData(
     selectedSymbol,
     interval,
@@ -234,10 +254,13 @@ export default function StockChart() {
   // If the key changed but the effect hasn't fired yet, skip merging old prepended data.
   const ohlcv: OHLCV[] | null = (() => {
     if (!freshOhlcv) return null;
-    if (prependedOhlcv.length === 0 || currentKey !== prevKeyRef.current) return freshOhlcv;
-    const seen = new Set(freshOhlcv.map((d) => d.timestamp));
-    const unique = prependedOhlcv.filter((d) => !seen.has(d.timestamp));
-    return [...unique, ...freshOhlcv].sort((a, b) => a.timestamp - b.timestamp);
+    const merged = (() => {
+      if (prependedOhlcv.length === 0 || currentKey !== prevKeyRef.current) return freshOhlcv;
+      const seen = new Set(freshOhlcv.map((d) => d.timestamp));
+      const unique = prependedOhlcv.filter((d) => !seen.has(d.timestamp));
+      return [...unique, ...freshOhlcv].sort((a, b) => a.timestamp - b.timestamp);
+    })();
+    return interval === '4h' ? aggregateToFourHour(merged) : merged;
   })();
 
   // When prepended history exists, recompute all indicators over the full merged ohlcv
@@ -320,7 +343,12 @@ export default function StockChart() {
         {selectedSymbol && !isLoading && !error && ohlcv && ohlcv.length > 0 && (
           <ChartCore
             ohlcv={ohlcv}
-            viewportOhlcv={freshOhlcv ?? []}
+            viewportOhlcv={(() => {
+              const base = interval === '4h' ? aggregateToFourHour(freshOhlcv ?? []) : (freshOhlcv ?? []);
+              if (!viewDays) return base;
+              const cutoff = Date.now() - viewDays * 86_400_000;
+              return base.filter((d) => d.timestamp >= cutoff);
+            })()}
             signals={signals}
             indicators={indicators}
             activeIndicators={activeIndicators}
